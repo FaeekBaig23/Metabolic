@@ -18,7 +18,7 @@
     <!-- Biometric -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- Notifications (Android 13+) -->
+    <!-- Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -28,11 +28,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Metabolic">
+        android:theme="@style/Theme.Metabolic.Splash">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:theme="@style/Theme.Metabolic.Splash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
