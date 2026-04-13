@@ -1,5 +1,6 @@
 package com.faiqbaig.metabolic.di
 
+import com.google.firebase.auth.FirebaseAuth
 import com.faiqbaig.metabolic.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -58,4 +59,8 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
 }
