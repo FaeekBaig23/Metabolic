@@ -3,7 +3,6 @@ package com.faiqbaig.metabolic.feature.auth
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,58 +15,55 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
-import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreenDark
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.faiqbaig.metabolic.core.ui.theme.DarkBackground
+import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    onSplashFinished: (isFirstTime: Boolean) -> Unit
+    onSplashFinished: (isFirstTime: Boolean) -> Unit,
+    viewModel       : AuthViewModel = hiltViewModel()
 ) {
-    // ── Animation states ─────────────────────────────────────
     var startAnimation by remember { mutableStateOf(false) }
 
     val alphaAnim = animateFloatAsState(
-        targetValue    = if (startAnimation) 1f else 0f,
-        animationSpec  = tween(durationMillis = 1000, easing = EaseInOut),
-        label          = "alpha"
+        targetValue   = if (startAnimation) 1f else 0f,
+        animationSpec = tween(1000, easing = EaseInOut),
+        label         = "alpha"
     )
-
     val scaleAnim = animateFloatAsState(
-        targetValue    = if (startAnimation) 1f else 0.7f,
-        animationSpec  = tween(durationMillis = 1000, easing = EaseOutBack),
-        label          = "scale"
+        targetValue   = if (startAnimation) 1f else 0.7f,
+        animationSpec = tween(1000, easing = EaseOutBack),
+        label         = "scale"
     )
-
     val taglineAlpha = animateFloatAsState(
-        targetValue    = if (startAnimation) 1f else 0f,
-        animationSpec  = tween(
-            durationMillis = 800,
-            delayMillis    = 600,
-            easing         = EaseIn
-        ),
-        label          = "tagline"
+        targetValue   = if (startAnimation) 1f else 0f,
+        animationSpec = tween(800, delayMillis = 600, easing = EaseIn),
+        label         = "tagline"
     )
 
-    // ── Trigger animation + navigate after delay ─────────────
     LaunchedEffect(key1 = true) {
         startAnimation = true
         delay(2800)
-        // TODO: Replace with real first-launch check from DataStore
-        onSplashFinished(true)
+
+        // Check login state + onboarding state
+        val isLoggedIn     = viewModel.isLoggedIn
+        val isOnboarded    = viewModel.isOnboardingCompleted()
+
+        when {
+            isLoggedIn  -> onSplashFinished(false)  // go to Dashboard
+            isOnboarded -> onSplashFinished(false)  // go to Login
+            else        -> onSplashFinished(true)   // go to Onboarding
+        }
     }
 
-    // ── UI ───────────────────────────────────────────────────
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackground,
-                        Color(0xFF0D2A20)
-                    )
+                Brush.verticalGradient(
+                    colors = listOf(DarkBackground, Color(0xFF0D2A20))
                 )
             ),
         contentAlignment = Alignment.Center
@@ -76,8 +72,6 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
-            // App name with scale + fade animation
             Text(
                 text       = "Metabolic",
                 fontSize   = 52.sp,
@@ -88,21 +82,16 @@ fun SplashScreen(
                     .scale(scaleAnim.value)
                     .alpha(alphaAnim.value)
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Tagline fades in slightly after the title
+            Spacer(Modifier.height(8.dp))
             Text(
-                text      = "Track. Plan. Transform.",
-                fontSize  = 15.sp,
+                text       = "Track. Plan. Transform.",
+                fontSize   = 15.sp,
                 fontWeight = FontWeight.Medium,
-                color     = MetabolicGreen.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-                modifier  = Modifier.alpha(taglineAlpha.value)
+                color      = MetabolicGreen.copy(alpha = 0.7f),
+                textAlign  = TextAlign.Center,
+                modifier   = Modifier.alpha(taglineAlpha.value)
             )
         }
-
-        // Version tag at bottom
         Text(
             text     = "v1.0.0",
             fontSize = 12.sp,

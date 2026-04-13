@@ -20,17 +20,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.faiqbaig.metabolic.core.ui.theme.*
+import com.faiqbaig.metabolic.feature.auth.AuthViewModel
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun OnboardingScreen(
-    onFinished: () -> Unit
+    onFinished : () -> Unit,
+    viewModel  : AuthViewModel = hiltViewModel()
 ) {
-    val pagerState  = rememberPagerState(pageCount = { onboardingPages.size })
-    val scope       = rememberCoroutineScope()
-    val isLastPage  = pagerState.currentPage == onboardingPages.size - 1
+    val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
+    val scope      = rememberCoroutineScope()
+    val isLastPage = pagerState.currentPage == onboardingPages.size - 1
 
     Box(
         modifier = Modifier
@@ -48,17 +50,22 @@ fun OnboardingScreen(
 
             // ── Skip button ──────────────────────────────────────
             Row(
-                modifier          = Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.End
             ) {
                 if (!isLastPage) {
-                    TextButton(onClick = onFinished) {
+                    TextButton(
+                        onClick = {
+                            viewModel.completeOnboarding()
+                            onFinished()
+                        }
+                    ) {
                         Text(
-                            text      = "Skip",
-                            color     = MetabolicGreen.copy(alpha = 0.7f),
-                            fontSize  = 14.sp,
+                            text       = "Skip",
+                            color      = MetabolicGreen.copy(alpha = 0.7f),
+                            fontSize   = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -84,10 +91,11 @@ fun OnboardingScreen(
                 }
             }
 
-            // ── Bottom button ─────────────────────────────────────
+            // ── Next / Get Started button ─────────────────────────
             Button(
                 onClick = {
                     if (isLastPage) {
+                        viewModel.completeOnboarding()
                         onFinished()
                     } else {
                         scope.launch {
@@ -118,7 +126,6 @@ fun OnboardingScreen(
 
 @Composable
 private fun OnboardingPage(page: OnboardingPage) {
-
     var visible by remember { mutableStateOf(false) }
     val alpha = animateFloatAsState(
         targetValue   = if (visible) 1f else 0f,
@@ -128,20 +135,19 @@ private fun OnboardingPage(page: OnboardingPage) {
     LaunchedEffect(page) { visible = true }
 
     Column(
-        modifier            = Modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 32.dp)
             .alpha(alpha.value),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Emoji icon in a styled circle
         Box(
-            modifier          = Modifier
+            modifier = Modifier
                 .size(120.dp)
                 .clip(CircleShape)
                 .background(MetabolicGreen.copy(alpha = 0.15f)),
-            contentAlignment  = Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             Text(text = page.emoji, fontSize = 52.sp)
         }
@@ -159,10 +165,10 @@ private fun OnboardingPage(page: OnboardingPage) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text      = page.description,
-            fontSize  = 15.sp,
-            color     = DarkTextSecondary,
-            textAlign = TextAlign.Center,
+            text       = page.description,
+            fontSize   = 15.sp,
+            color      = DarkTextSecondary,
+            textAlign  = TextAlign.Center,
             lineHeight = 24.sp
         )
     }

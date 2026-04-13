@@ -2,6 +2,9 @@ package com.faiqbaig.metabolic.feature.auth
 
 import com.faiqbaig.metabolic.feature.auth.AuthState
 
+import com.faiqbaig.metabolic.core.utils.PreferencesManager
+import kotlinx.coroutines.flow.first
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -16,11 +19,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _authState: MutableStateFlow<AuthState> = MutableStateFlow(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    // ── Onboarding state ──────────────────────────────────
+    suspend fun isOnboardingCompleted(): Boolean =
+        preferencesManager.isOnboardingCompleted.first()
+
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            preferencesManager.setOnboardingCompleted()
+        }
+    }
 
     // ── Check if user is already logged in ───────────────
     val isLoggedIn: Boolean

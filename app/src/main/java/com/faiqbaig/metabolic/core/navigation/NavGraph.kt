@@ -4,12 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.faiqbaig.metabolic.core.ui.theme.DarkBackground
 import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
 import androidx.compose.ui.Alignment
+
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.faiqbaig.metabolic.feature.auth.AuthViewModel
+
+import com.faiqbaig.metabolic.feature.auth.LoginScreen
+import com.faiqbaig.metabolic.feature.auth.RegisterScreen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -32,13 +37,14 @@ fun MetabolicNavGraph(
 
         // ── Splash ───────────────────────────────────────────
         composable(Screen.Splash.route) {
+            val viewModel: AuthViewModel = hiltViewModel()
             SplashScreen(
                 onSplashFinished = { isFirstTime ->
-                    val destination = if (isFirstTime)
-                        Screen.Onboarding.route
-                    else
-                        Screen.Login.route
-
+                    val destination = when {
+                        viewModel.isLoggedIn -> Screen.Dashboard.route
+                        isFirstTime          -> Screen.Onboarding.route
+                        else                 -> Screen.Login.route
+                    }
                     navController.navigate(destination) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
@@ -59,13 +65,30 @@ fun MetabolicNavGraph(
 
         // ── Login ────────────────────────────────────────────
         composable(Screen.Login.route) {
-            // Placeholder — replaced in Step 3
-            PlaceholderScreen(name = "Login")
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
+                }
+            )
         }
 
         // ── Register ─────────────────────────────────────────
         composable(Screen.Register.route) {
-            PlaceholderScreen(name = "Register")
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         // ── Dashboard ────────────────────────────────────────

@@ -1,13 +1,21 @@
 package com.faiqbaig.metabolic.di
 
-// Repository bindings will be added here as we build
-// each feature module. Keeping this as a clean
-// placeholder so the DI graph is ready to expand.
-
+import android.content.Context
+import com.faiqbaig.metabolic.core.utils.PreferencesManager
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule
+object RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun providePreferencesManager(
+        @ApplicationContext context: Context
+    ): PreferencesManager = PreferencesManager(context)
+}
