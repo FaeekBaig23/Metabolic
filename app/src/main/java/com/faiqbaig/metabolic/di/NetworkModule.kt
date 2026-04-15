@@ -1,5 +1,7 @@
 package com.faiqbaig.metabolic.di
 
+import com.google.firebase.firestore.FirebaseFirestore
+
 import com.google.firebase.auth.FirebaseAuth
 import com.faiqbaig.metabolic.BuildConfig
 import com.squareup.moshi.Moshi
@@ -63,4 +65,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 }

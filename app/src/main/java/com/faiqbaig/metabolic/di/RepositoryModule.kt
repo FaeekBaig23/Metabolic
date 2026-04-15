@@ -1,5 +1,10 @@
 package com.faiqbaig.metabolic.di
 
+import com.faiqbaig.metabolic.core.data.local.UserProfileDao
+import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 import android.content.Context
 import com.faiqbaig.metabolic.core.utils.PreferencesManager
 import dagger.Module
@@ -18,4 +23,12 @@ object RepositoryModule {
     fun providePreferencesManager(
         @ApplicationContext context: Context
     ): PreferencesManager = PreferencesManager(context)
+
+    @Provides
+    @Singleton
+    fun provideUserProfileRepository(
+        dao      : UserProfileDao,
+        auth     : FirebaseAuth,
+        firestore: FirebaseFirestore
+    ): UserProfileRepository = UserProfileRepository(dao, auth, firestore)
 }

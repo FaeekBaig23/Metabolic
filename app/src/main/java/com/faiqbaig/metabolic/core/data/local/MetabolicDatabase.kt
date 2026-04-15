@@ -4,8 +4,10 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities  = [UserEntity::class],
-    version   = 1,
+    entities     = [UserEntity::class, UserProfileEntity::class],
+    version      = 2,
     exportSchema = true
 )
-abstract class MetabolicDatabase : RoomDatabase()
+abstract class MetabolicDatabase : RoomDatabase() {
+    abstract fun userProfileDao(): UserProfileDao
+}
