@@ -16,16 +16,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle // <-- Add this import
 import com.faiqbaig.metabolic.core.ui.theme.DarkBackground
 import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    onSplashFinished: (isFirstTime: Boolean) -> Unit,
-    viewModel       : AuthViewModel = hiltViewModel()
+    // ── CHANGED: Now takes a String route instead of a Boolean ──
+    onNavigate: (String) -> Unit,
+    viewModel : AuthViewModel = hiltViewModel()
 ) {
     var startAnimation by remember { mutableStateOf(false) }
+
+    // ── CHANGED: Observe the destination calculated by the ViewModel ──
+    val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
 
     val alphaAnim = animateFloatAsState(
         targetValue   = if (startAnimation) 1f else 0f,
@@ -45,16 +50,11 @@ fun SplashScreen(
 
     LaunchedEffect(key1 = true) {
         startAnimation = true
-        delay(2800)
+        delay(2800) // Wait for the beautiful animations to finish
 
-        // Check login state + onboarding state
-        val isLoggedIn     = viewModel.isLoggedIn
-        val isOnboarded    = viewModel.isOnboardingCompleted()
-
-        when {
-            isLoggedIn  -> onSplashFinished(false)  // go to Dashboard
-            isOnboarded -> onSplashFinished(false)  // go to Login
-            else        -> onSplashFinished(true)   // go to Onboarding
+        // ── CHANGED: Navigate directly to whatever the ViewModel decided ──
+        startDestination?.let { route ->
+            onNavigate(route)
         }
     }
 

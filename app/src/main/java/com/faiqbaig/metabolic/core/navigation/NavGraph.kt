@@ -23,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.faiqbaig.metabolic.feature.auth.SplashScreen
 import com.faiqbaig.metabolic.feature.onboarding.OnboardingScreen
+import com.faiqbaig.metabolic.feature.profile.ProfileSetupScreen
 
 @Composable
 fun MetabolicNavGraph(
@@ -37,15 +38,10 @@ fun MetabolicNavGraph(
 
         // ── Splash ───────────────────────────────────────────
         composable(Screen.Splash.route) {
-            val viewModel: AuthViewModel = hiltViewModel()
             SplashScreen(
-                onSplashFinished = { isFirstTime ->
-                    val destination = when {
-                        viewModel.isLoggedIn -> Screen.Dashboard.route
-                        isFirstTime          -> Screen.Onboarding.route
-                        else                 -> Screen.Login.route
-                    }
-                    navController.navigate(destination) {
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        // Clear the splash screen from the backstack so they can't return to it
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
@@ -81,12 +77,25 @@ fun MetabolicNavGraph(
         composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterSuccess = {
-                    navController.navigate(Screen.Dashboard.route) {
+                    // ── CHANGED: Route to ProfileSetup instead of Dashboard ──
+                    navController.navigate(Screen.ProfileSetup.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
                 onNavigateToLogin = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        // ── Profile Setup ───────────────────────────────────
+        composable(route = Screen.ProfileSetup.route) {
+            ProfileSetupScreen(
+                onSetupComplete = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        // Clear the backstack so they can't go back to setup
+                        popUpTo(Screen.ProfileSetup.route) { inclusive = true }
+                    }
                 }
             )
         }
