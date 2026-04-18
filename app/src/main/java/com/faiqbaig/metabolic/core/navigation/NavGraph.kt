@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.faiqbaig.metabolic.feature.auth.AuthViewModel
 
+import androidx.navigation.NavGraph.Companion.findStartDestination
+
 import com.faiqbaig.metabolic.feature.auth.LoginScreen
 import com.faiqbaig.metabolic.feature.auth.RegisterScreen
 
@@ -24,6 +26,7 @@ import androidx.navigation.compose.composable
 import com.faiqbaig.metabolic.feature.auth.SplashScreen
 import com.faiqbaig.metabolic.feature.onboarding.OnboardingScreen
 import com.faiqbaig.metabolic.feature.profile.ProfileSetupScreen
+import com.faiqbaig.metabolic.feature.dashboard.DashboardScreen
 
 @Composable
 fun MetabolicNavGraph(
@@ -101,8 +104,43 @@ fun MetabolicNavGraph(
         }
 
         // ── Dashboard ────────────────────────────────────────
-        composable(Screen.Dashboard.route) {
-            PlaceholderScreen(name = "Dashboard")
+        composable(route = Screen.Dashboard.route) { // or "dashboard" if you use strings directly
+            DashboardScreen(
+                // Bottom Navigation Tabs (with state preservation)
+                onNavigateToTracker = {
+                    navController.navigate(Screen.Tracker.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToPlans = {
+                    navController.navigate(Screen.Plans.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.Profile.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+
+                // Standard Screens (FAB and Cards)
+                onNavigateToCamera = { navController.navigate(Screen.Camera.route) },
+                onNavigateToChatbot = { navController.navigate(Screen.Chatbot.route) },
+                onNavigateToMap = { navController.navigate(Screen.Map.route) },
+                onNavigateToBmi = { navController.navigate(Screen.Bmi.route) }
+            )
         }
 
         // ── Tracker ──────────────────────────────────────────
