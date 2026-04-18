@@ -72,6 +72,10 @@ dependencies {
     implementation(libs.splashscreen)
     implementation(libs.coroutines.android)
 
+    //Font Style
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.5") // Use your current compose version
+
+
     // Compose BOM
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
