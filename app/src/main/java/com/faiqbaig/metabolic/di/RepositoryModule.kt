@@ -1,12 +1,13 @@
 package com.faiqbaig.metabolic.di
 
+import android.content.Context
 import com.faiqbaig.metabolic.core.data.local.UserProfileDao
+import com.faiqbaig.metabolic.core.data.repository.MealLogRepositoryImpl
 import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
+import com.faiqbaig.metabolic.core.domain.repository.MealLogRepository
+import com.faiqbaig.metabolic.core.utils.PreferencesManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
-import android.content.Context
-import com.faiqbaig.metabolic.core.utils.PreferencesManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,4 +32,11 @@ object RepositoryModule {
         auth     : FirebaseAuth,
         firestore: FirebaseFirestore
     ): UserProfileRepository = UserProfileRepository(dao, auth, firestore)
+
+    // ── CHANGED: Swapped @Binds for @Provides so it works perfectly inside an 'object' ──
+    @Provides
+    @Singleton
+    fun provideMealLogRepository(
+        mealLogRepositoryImpl: MealLogRepositoryImpl
+    ): MealLogRepository = mealLogRepositoryImpl
 }

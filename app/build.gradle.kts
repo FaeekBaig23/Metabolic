@@ -27,6 +27,15 @@ android {
                 arguments += mapOf("room.schemaLocation" to "$projectDir/schemas")
             }
         }
+
+        // ── NEW: Read local.properties and expose USDA API Key ──
+        val properties = Properties()
+        val localPropertiesFile = project.rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            properties.load(localPropertiesFile.inputStream())
+        }
+
+        buildConfigField("String", "USDA_API_KEY", "\"${properties.getProperty("USDA_API_KEY", "")}\"")
     }
 
     buildTypes {
@@ -71,10 +80,6 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.splashscreen)
     implementation(libs.coroutines.android)
-
-    //Font Style
-    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.5") // Use your current compose version
-
 
     // Compose BOM
     implementation(platform(libs.compose.bom))
