@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-// TODO: Ensure these imports match your actual theme package
 import com.faiqbaig.metabolic.core.ui.theme.DarkBackground
 import com.faiqbaig.metabolic.core.ui.theme.DarkSurface
 import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
@@ -97,7 +96,8 @@ fun DashboardScreen(
                 // Section B: Calorie Ring
                 item {
                     CalorieRingCard(
-                        caloriesConsumed = uiState.caloriesConsumed,
+                        // ── CHANGED: Now using live totalCalories from Room ──
+                        caloriesConsumed = uiState.totalCalories,
                         caloriesRemaining = uiState.caloriesRemaining,
                         dailyCalorieTarget = uiState.dailyCalorieTarget,
                         progressFraction = uiState.calorieProgressFraction
@@ -108,9 +108,10 @@ fun DashboardScreen(
                 // Section C: Macro Breakdown
                 item {
                     MacroBreakdownCard(
-                        proteinConsumed = uiState.proteinConsumed, proteinTarget = uiState.proteinTarget,
-                        carbsConsumed = uiState.carbsConsumed, carbsTarget = uiState.carbsTarget,
-                        fatConsumed = uiState.fatConsumed, fatTarget = uiState.fatTarget
+                        // ── CHANGED: Now using live macro totals from Room ──
+                        proteinConsumed = uiState.totalProtein, proteinTarget = uiState.proteinTarget,
+                        carbsConsumed = uiState.totalCarbs, carbsTarget = uiState.carbsTarget,
+                        fatConsumed = uiState.totalFat, fatTarget = uiState.fatTarget
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -130,7 +131,8 @@ fun DashboardScreen(
                 // Section E: Today's Meals
                 item {
                     TodaysMealsSection(
-                        meals = uiState.todaysMeals,
+                        // ── CHANGED: Passed emptyList() since we removed DummyMealLogs ──
+                        meals = emptyList(),
                         onSeeAllClick = onNavigateToTracker,
                         onLogMealClick = onNavigateToTracker
                     )
@@ -164,7 +166,7 @@ fun DashboardScreen(
                 // Section I: Gym Teaser
                 item {
                     GymTeaserCard(onExploreClick = onNavigateToMap)
-                    // Section J: Bottom Padding (Scaffold handles most of this, but adding a bit extra to clear the FAB)
+                    // Section J: Bottom Padding
                     Spacer(modifier = Modifier.height(40.dp))
                 }
             }

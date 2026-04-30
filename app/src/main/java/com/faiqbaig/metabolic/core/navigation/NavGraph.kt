@@ -28,6 +28,9 @@ import com.faiqbaig.metabolic.feature.onboarding.OnboardingScreen
 import com.faiqbaig.metabolic.feature.profile.ProfileSetupScreen
 import com.faiqbaig.metabolic.feature.dashboard.DashboardScreen
 
+// ── NEW: Import your Tracker Screen ──
+import com.faiqbaig.metabolic.feature.tracker.TrackerScreen
+
 @Composable
 fun MetabolicNavGraph(
     navController : NavHostController,
@@ -70,6 +73,7 @@ fun MetabolicNavGraph(
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
+                // ── Add this missing callback back in! ──
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route)
                 }
@@ -80,7 +84,7 @@ fun MetabolicNavGraph(
         composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterSuccess = {
-                    // ── CHANGED: Route to ProfileSetup instead of Dashboard ──
+                    // Route to ProfileSetup instead of Dashboard
                     navController.navigate(Screen.ProfileSetup.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
@@ -104,7 +108,7 @@ fun MetabolicNavGraph(
         }
 
         // ── Dashboard ────────────────────────────────────────
-        composable(route = Screen.Dashboard.route) { // or "dashboard" if you use strings directly
+        composable(route = Screen.Dashboard.route) {
             DashboardScreen(
                 // Bottom Navigation Tabs (with state preservation)
                 onNavigateToTracker = {
@@ -145,7 +149,8 @@ fun MetabolicNavGraph(
 
         // ── Tracker ──────────────────────────────────────────
         composable(Screen.Tracker.route) {
-            PlaceholderScreen(name = "Tracker")
+            // ── CHANGED: Replaced the Placeholder with the real screen ──
+            TrackerScreen()
         }
 
         // ── Camera ───────────────────────────────────────────

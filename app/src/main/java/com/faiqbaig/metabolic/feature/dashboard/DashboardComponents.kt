@@ -26,6 +26,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.faiqbaig.metabolic.core.data.local.MealLogEntity
+
 // Imports for CalorieRing and MacroBar
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
@@ -522,7 +524,7 @@ private fun QuickActionChip(
 
 @Composable
 fun TodaysMealsSection(
-    meals: List<DummyMealLog>,
+    meals: List<MealLogEntity>,
     onSeeAllClick: () -> Unit,
     onLogMealClick: () -> Unit,
     modifier: Modifier = Modifier
