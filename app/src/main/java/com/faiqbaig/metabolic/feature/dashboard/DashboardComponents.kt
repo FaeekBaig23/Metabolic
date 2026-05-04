@@ -452,6 +452,7 @@ private fun MacroLegendItem(
 
 // Section D: Quick Action Row
 
+/*
 @Composable
 fun QuickActionRow(
     onLogMealClick: () -> Unit,
@@ -520,6 +521,8 @@ private fun QuickActionChip(
     }
 }
 
+
+ */
 // Section E: Today's Meals Section
 
 @Composable

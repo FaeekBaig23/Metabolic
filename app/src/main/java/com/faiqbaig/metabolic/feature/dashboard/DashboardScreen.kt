@@ -113,20 +113,10 @@ fun DashboardScreen(
                         carbsConsumed = uiState.totalCarbs, carbsTarget = uiState.carbsTarget,
                         fatConsumed = uiState.totalFat, fatTarget = uiState.fatTarget
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))   // 24 to 32 test
                 }
 
-                // Section D: Quick Actions
-                item {
-                    QuickActionRow(
-                        onLogMealClick = onNavigateToTracker,
-                        onScanMealClick = onNavigateToCamera,
-                        onWaterClick = { /* Will jump to water card visually later */ },
-                        onLogWeightClick = onNavigateToBmi,
-                        onAskAiClick = onNavigateToChatbot
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+                // Section D: Quick Actions --- REMOVED --- !!!
 
                 // Section E: Today's Meals
                 item {
