@@ -28,6 +28,13 @@ import java.util.Locale
 
 import com.faiqbaig.metabolic.core.data.local.MealLogEntity
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.border
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+
 // Imports for CalorieRing and MacroBar
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
@@ -476,13 +483,13 @@ fun TodaysMealsSection(
             "🍽️" to "No meals logged yet.\nLet's get started!"
         hasBreakfast && hasLunch && hasDinner && hasSnack ->
             "🏆" to "All meals logged for the day.\nGreat job!"
-        hasBreakfast && hasLunch && !hasDinner ->
-            "🌙" to "Breakfast and lunch logged.\nYou have not logged your dinner yet."
-        hasBreakfast && !hasLunch ->
-            "☀️" to "Breakfast logged.\nDon't forget to log your lunch!"
-        hasBreakfast && hasLunch && hasDinner && !hasSnack ->
+        hasBreakfast && hasLunch && hasDinner ->
             "🍎" to "Main meals logged.\nDon't forget to log your snacks!"
-        !hasBreakfast && hasLunch ->
+        hasBreakfast && hasLunch ->
+            "🌙" to "Breakfast and lunch logged.\nYou have not logged your dinner yet."
+        hasBreakfast ->
+            "☀️" to "Breakfast logged.\nDon't forget to log your lunch!"
+        hasLunch ->
             "⚠️" to "Lunch logged, but you missed breakfast!"
         else ->
             "👍" to "You've logged ${meals.size} items today.\nKeep it up!"
@@ -563,99 +570,39 @@ fun TodaysMealsSection(
     }
 }
 
-@Composable
-private fun MealRow(
-    icon: String,
-    name: String,
-    time: String,
-    calories: Int,
-    hasProtein: Boolean,
-    hasCarbs: Boolean,
-    hasFat: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = DarkSurface
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left: Meal Icon
-            Text(text = icon, fontSize = 24.sp)
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Center: Name and Time
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    color = DarkTextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = time,
-                    color = DarkTextSecondary,
-                    fontSize = 12.sp
-                )
-            }
-
-            // Right: Calories and Macro Dots
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "$calories kcal",
-                    color = MacroCalories,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (hasProtein) MacroDot(color = MacroProtein)
-                    if (hasCarbs) MacroDot(color = MacroCarbs)
-                    if (hasFat) MacroDot(color = MacroFat)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MacroDot(color: Color) {
-    Box(
-        modifier = Modifier
-            .size(6.dp)
-            .clip(CircleShape)
-            .background(color)
-    )
-}
-
 // Section F: Water Intake Tracker
 
 @Composable
 fun WaterTrackerCard(
-    waterGlasses: Int,
-    onWaterToggle: (Int) -> Unit,
+    waterConsumedMl: Int,
+    waterTargetMl: Int,
+    onAddWater: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val totalGlasses = 8
-    val mlPerGlass = 250 // Standard glass size
+    // Local state to remember which glass size the user has selected
+    var selectedVolume by remember { mutableStateOf(250) }
+    val volumeOptions = listOf(100, 250, 500)
+
+    // Calculate fill percentage and animate it
+    val fillFraction = if (waterTargetMl > 0) {
+        (waterConsumedMl.toFloat() / waterTargetMl.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+
+    val animatedFill by animateFloatAsState(
+        targetValue = fillFraction,
+        animationSpec = tween(durationMillis = 1000, easing = EaseOutCubic),
+        label = "WaterTankAnimation"
+    )
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         color = DarkSurface,
         border = BorderStroke(1.dp, DarkBorder)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = "💧 Hydration",
                 color = DarkTextPrimary,
@@ -663,47 +610,125 @@ fun WaterTrackerCard(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Row of glasses
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.Bottom
             ) {
-                for (i in 1..totalGlasses) {
-                    val isFilled = i <= waterGlasses
+                // LEFT: The Vertical Water Tank
+                Box(
+                    modifier = Modifier
+                        .width(70.dp)
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(DarkSurfaceVariant)
+                        .border(2.dp, DarkBorder, RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    // The animated water fill
                     Box(
                         modifier = Modifier
-                            // Scaled down slightly from 40dp to 36dp to ensure
-                            // it doesn't overflow on smaller Android screens
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (isFilled) MetabolicCyan else DarkSurfaceVariant)
-                            .clickable { onWaterToggle(i) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isFilled) {
-                            // A subtle visual cue that the glass is full
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.3f))
+                            .fillMaxWidth()
+                            .fillMaxHeight(fraction = animatedFill)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(MetabolicCyan, Color(0xFF0277BD)) // Cyan to deeper blue
+                                )
                             )
+                    )
+
+                    // Percentage text overlay
+                    Text(
+                        text = "${(fillFraction * 100).toInt()}%",
+                        color = if (fillFraction > 0.15f) Color.White else DarkTextSecondary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                // RIGHT: The Controls
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    Text(
+                        text = "Glass Size",
+                        color = DarkTextSecondary,
+                        fontSize = 12.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Glass Size Selectors
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        volumeOptions.forEach { volume ->
+                            val isSelected = selectedVolume == volume
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(36.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { selectedVolume = volume },
+                                color = if (isSelected) MetabolicCyan.copy(alpha = 0.2f) else DarkSurfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) MetabolicCyan else DarkBorder)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "${volume}ml",
+                                        color = if (isSelected) MetabolicCyan else DarkTextSecondary,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Add Water Button
+                    Button(
+                        onClick = { onAddWater(selectedVolume) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MetabolicCyan),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "➕ Add ${selectedVolume}ml",
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Footer text calculating the total ml
-            Text(
-                text = "$waterGlasses / $totalGlasses glasses — ${waterGlasses * mlPerGlass} ml",
-                color = DarkTextSecondary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium
-            )
+            // BOTTOM: Textual Message
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = DarkSurfaceVariant.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "$waterConsumedMl ml / $waterTargetMl ml consumed today",
+                    color = DarkTextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(12.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
         }
     }
 }

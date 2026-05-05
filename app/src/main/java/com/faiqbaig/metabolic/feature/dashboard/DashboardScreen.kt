@@ -114,8 +114,9 @@ fun DashboardScreen(
                 // Section F: Water Tracker
                 item {
                     WaterTrackerCard(
-                        waterGlasses = uiState.waterGlasses,
-                        onWaterToggle = viewModel::onWaterToggle
+                        waterConsumedMl = uiState.waterConsumedMl,
+                        waterTargetMl = uiState.dailyWaterTargetMl,
+                        onAddWater = viewModel::addWater
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }

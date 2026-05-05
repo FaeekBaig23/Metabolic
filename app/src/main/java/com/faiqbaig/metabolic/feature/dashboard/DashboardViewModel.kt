@@ -105,10 +105,12 @@ class DashboardViewModel @Inject constructor(
         return "$timeOfDay, $firstName 👋"
     }
 
-    fun onWaterToggle(index: Int) {
-        val currentGlasses = _uiState.value.waterGlasses
-        val newCount = if (index < currentGlasses) index else index + 1
-
-        _uiState.update { it.copy(waterGlasses = newCount) }
+    fun addWater(amountMl: Int) {
+        // Stub: In the future, this will write to the Room DB
+        _uiState.update { currentState ->
+            currentState.copy(
+                waterConsumedMl = currentState.waterConsumedMl + amountMl
+            )
+        }
     }
 }

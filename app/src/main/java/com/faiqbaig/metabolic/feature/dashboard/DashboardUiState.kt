@@ -23,8 +23,11 @@ data class DashboardUiState(
 
     // ── Metrics & Extras ──
     val bmi: Double = 0.0,
-    val waterGlasses: Int = 0,
     val streak: Int = 0,
+
+    // ── Water Intake ──
+    val waterConsumedMl: Int = 0,
+    val dailyWaterTargetMl: Int = 2500, // Standard 2.5L daily goal
 
     // ── UI State ──
     val isLoading: Boolean = true
