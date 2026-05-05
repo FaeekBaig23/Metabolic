@@ -122,7 +122,7 @@ fun DashboardScreen(
                 item {
                     TodaysMealsSection(
                         // ── CHANGED: Passed emptyList() since we removed DummyMealLogs ──
-                        meals = emptyList(),
+                        meals = uiState.todaysMeals,
                         onSeeAllClick = onNavigateToTracker,
                         onLogMealClick = onNavigateToTracker
                     )

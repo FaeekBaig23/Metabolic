@@ -525,6 +525,7 @@ private fun QuickActionChip(
  */
 // Section E: Today's Meals Section
 
+// ── NEW SMART MEALS SECTION ──
 @Composable
 fun TodaysMealsSection(
     meals: List<MealLogEntity>,
@@ -532,6 +533,31 @@ fun TodaysMealsSection(
     onLogMealClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Determine which meals the user has logged today (case-insensitive)
+    val loggedTypes = meals.map { it.mealType.lowercase() }.toSet()
+    val hasBreakfast = "breakfast" in loggedTypes
+    val hasLunch = "lunch" in loggedTypes
+    val hasDinner = "dinner" in loggedTypes
+    val hasSnack = "snack" in loggedTypes
+
+    // Generate the smart conversational message based on what's missing
+    val (icon, message) = when {
+        meals.isEmpty() ->
+            "🍽️" to "No meals logged yet.\nLet's get started!"
+        hasBreakfast && hasLunch && hasDinner && hasSnack ->
+            "🏆" to "All meals logged for the day.\nGreat job!"
+        hasBreakfast && hasLunch && !hasDinner ->
+            "🌙" to "Breakfast and lunch logged.\nYou have not logged your dinner yet."
+        hasBreakfast && !hasLunch ->
+            "☀️" to "Breakfast logged.\nDon't forget to log your lunch!"
+        hasBreakfast && hasLunch && hasDinner && !hasSnack ->
+            "🍎" to "Main meals logged.\nDon't forget to log your snacks!"
+        !hasBreakfast && hasLunch ->
+            "⚠️" to "Lunch logged, but you missed breakfast!"
+        else ->
+            "👍" to "You've logged ${meals.size} items today.\nKeep it up!"
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -559,68 +585,49 @@ fun TodaysMealsSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Content
-        if (meals.isEmpty()) {
-            EmptyMealState(onLogMealClick = onLogMealClick)
-        } else {
-            // Placeholder rendering for when Step 6 populates the list
-            meals.forEach { _ ->
-                MealRow(
-                    icon = "🍳",
-                    name = "Scrambled Eggs & Toast", // Stub text
-                    time = "08:30 AM",               // Stub text
-                    calories = 340,                  // Stub text
-                    hasProtein = true,
-                    hasCarbs = true,
-                    hasFat = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyMealState(onLogMealClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = DarkSurface,
-        border = BorderStroke(1.dp, DarkBorder)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        // The Smart Box
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkBorder)
         ) {
-            Text(text = "🍽️", fontSize = 40.sp)
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "No meals logged yet",
-                color = DarkTextPrimary,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Prominent Call to Action Button
-            Surface(
+            Column(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .clickable { onLogMealClick() },
-                color = MetabolicGreen
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Text(text = icon, fontSize = 36.sp)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
-                    text = "➕ Log your first meal",
-                    color = Color.Black, // High contrast on the green button
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    text = message,
+                    color = DarkTextPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 22.sp
                 )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // The Persistent Log Button
+                Surface(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable { onLogMealClick() },
+                    color = MetabolicGreen
+                ) {
+                    Text(
+                        text = "➕ Log a meal",
+                        color = Color.Black,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                    )
+                }
             }
         }
     }

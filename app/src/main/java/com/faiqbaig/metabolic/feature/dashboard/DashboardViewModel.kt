@@ -82,6 +82,7 @@ class DashboardViewModel @Inject constructor(
                 _uiState.update { currentState ->
                     currentState.copy(
                         // Make sure your DashboardUiState has these properties!
+                        todaysMeals = meals,
                         totalCalories = meals.sumOf { it.calories },
                         totalProtein = meals.sumOf { it.protein },
                         totalCarbs = meals.sumOf { it.carbs },

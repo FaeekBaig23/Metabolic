@@ -1,9 +1,13 @@
 package com.faiqbaig.metabolic.feature.dashboard
 
+import com.faiqbaig.metabolic.core.data.local.MealLogEntity
+
 data class DashboardUiState(
     val userName: String = "",
     val goal: String = "",
     val greeting: String = "",
+
+    val todaysMeals: List<MealLogEntity> = emptyList(),
 
     // ── Targets (Pulled from Firebase Profile) ──
     val dailyCalorieTarget: Int = 2000,
