@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import java.text.NumberFormat
+import androidx.compose.ui.graphics.drawscope.rotate
 
 // TODO: Ensure these imports match your actual theme package
 import com.faiqbaig.metabolic.core.ui.theme.DarkTextPrimary
@@ -450,79 +451,8 @@ private fun MacroLegendItem(
     }
 }
 
-// Section D: Quick Action Row
+// Section D: Quick Action Row --- REMOVED --- !!!
 
-/*
-@Composable
-fun QuickActionRow(
-    onLogMealClick: () -> Unit,
-    onScanMealClick: () -> Unit,
-    onWaterClick: () -> Unit,
-    onLogWeightClick: () -> Unit,
-    onAskAiClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // A horizontally scrollable row
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            QuickActionChip(icon = "➕", label = "Log Meal", onClick = onLogMealClick)
-        }
-        item {
-            QuickActionChip(icon = "📷", label = "Scan Meal", onClick = onScanMealClick)
-        }
-        item {
-            QuickActionChip(icon = "💧", label = "Water", onClick = onWaterClick)
-        }
-        item {
-            QuickActionChip(icon = "⚖️", label = "Log Weight", onClick = onLogWeightClick)
-        }
-        item {
-            QuickActionChip(icon = "🤖", label = "Ask AI", onClick = onAskAiClick)
-        }
-    }
-}
-
-@Composable
-private fun QuickActionChip(
-    icon: String,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(50))
-            .clickable { onClick() },
-        color = DarkSurfaceVariant,
-        border = BorderStroke(1.dp, DarkBorder)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = icon,
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = label,
-                color = DarkTextPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-
- */
 // Section E: Today's Meals Section
 
 // ── NEW SMART MEALS SECTION ──
@@ -778,7 +708,7 @@ fun WaterTrackerCard(
     }
 }
 
-// Section G: BMI Snapshot Card
+// Section G: BMI Snapshot Card (Redesigned with Semicircle Gauge)
 
 @Composable
 fun BmiSnapshotCard(
@@ -786,111 +716,132 @@ fun BmiSnapshotCard(
     onTrackWeightClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Determine the category and color based on standard BMI ranges
     val (categoryText, categoryColor) = when {
-        bmi == 0.0 -> "No data" to DarkSurfaceVariant // Fallback for empty state
+        bmi == 0.0 -> "No data" to DarkSurfaceVariant
         bmi < 18.5 -> "Underweight" to MetabolicCyan
         bmi < 25.0 -> "Normal weight" to MetabolicGreen
         bmi < 30.0 -> "Overweight" to SemanticWarning
         else -> "Obese" to SemanticError
     }
 
-    // Format BMI to one decimal place
     val formattedBmi = if (bmi > 0) String.format(Locale.US, "%.1f", bmi) else "--"
+
+    // Calculate the target angle for the needle (180 degrees total sweep)
+    // 15 BMI = 180° (far left), 35 BMI = 360°/0° (far right)
+    val targetAngle = if (bmi > 0) {
+        val fraction = ((bmi - 15.0) / 20.0).coerceIn(0.0, 1.0).toFloat()
+        180f + (fraction * 180f)
+    } else {
+        180f // Rest at the far left if no data
+    }
+
+    // Animate the needle
+    val animatedAngle = remember { Animatable(180f) }
+    LaunchedEffect(bmi) {
+        animatedAngle.animateTo(
+            targetValue = targetAngle,
+            animationSpec = tween(durationMillis = 1200, easing = EaseOutCubic)
+        )
+    }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         color = DarkSurface,
         border = BorderStroke(1.dp, DarkBorder)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 24.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Left Side: Large BMI Number
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(0.3f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = formattedBmi,
+                    text = "⚖️ Body Mass Index",
                     color = DarkTextPrimary,
-                    fontSize = 28.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "BMI",
+                    text = "Update →",
                     color = DarkTextSecondary,
-                    fontSize = 12.sp
+                    fontSize = 13.sp,
+                    modifier = Modifier.clickable { onTrackWeightClick() }
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Right Side: Gauge Bar and Labels
-            Column(
-                modifier = Modifier.weight(0.7f)
+            // The Semicircle Gauge
+            Box(
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(110.dp), // Height is exactly half the width for a perfect semicircle
+                contentAlignment = Alignment.BottomCenter
             ) {
-                // The Visual Gauge
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(24.dp)
-                ) {
-                    val trackHeight = 6.dp.toPx()
-                    val centerY = size.height / 2
-                    val segmentWidth = size.width / 4
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidthPx = 16.dp.toPx()
+                    val arcSize = Size(size.width, size.width) // Use width for both to ensure a perfect circle
 
-                    // Draw the 4 colored segments
-                    drawLine(MetabolicCyan, Offset(0f, centerY), Offset(segmentWidth, centerY), strokeWidth = trackHeight, cap = StrokeCap.Round)
-                    drawLine(MetabolicGreen, Offset(segmentWidth, centerY), Offset(segmentWidth * 2, centerY), strokeWidth = trackHeight)
-                    drawLine(SemanticWarning, Offset(segmentWidth * 2, centerY), Offset(segmentWidth * 3, centerY), strokeWidth = trackHeight)
-                    drawLine(SemanticError, Offset(segmentWidth * 3, centerY), Offset(size.width, centerY), strokeWidth = trackHeight, cap = StrokeCap.Round)
+                    // The gauge arcs
+                    // 18.5 BMI is ~31.5 degrees sweep
+                    drawArc(color = MetabolicCyan, startAngle = 180f, sweepAngle = 31.5f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
+                    // 25.0 BMI is ~58.5 degrees sweep
+                    drawArc(color = MetabolicGreen, startAngle = 211.5f, sweepAngle = 58.5f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
+                    // 30.0 BMI is 45 degrees sweep
+                    drawArc(color = SemanticWarning, startAngle = 270f, sweepAngle = 45f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
+                    // 35.0+ BMI is 45 degrees sweep
+                    drawArc(color = SemanticError, startAngle = 315f, sweepAngle = 45f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
 
-                    // Calculate dot position only if we have a valid BMI
+                    // The Animated Needle
+                    val pivotCenter = Offset(size.width / 2, size.width / 2) // Base of the needle
+                    val needleLength = size.width / 2 - strokeWidthPx + 10f
+
                     if (bmi > 0) {
-                        // Clamp BMI between 15 and 35 for visual gauge bounding
-                        val clampedBmi = bmi.coerceIn(15.0, 35.0)
-                        val fraction = ((clampedBmi - 15.0) / 20.0).toFloat()
-                        val dotX = size.width * fraction
+                        rotate(degrees = animatedAngle.value, pivot = pivotCenter) {
+                            // Draw the line pointing to the right (0 degrees).
+                            // The rotate transform will bend it over to the correct position on the arc.
+                            drawLine(
+                                color = Color.White,
+                                start = pivotCenter,
+                                end = Offset(pivotCenter.x + needleLength, pivotCenter.y),
+                                strokeWidth = 8f,
+                                cap = StrokeCap.Round
+                            )
+                        }
 
-                        // Draw white indicator dot
-                        drawCircle(
-                            color = Color.White,
-                            radius = 6.dp.toPx(),
-                            center = Offset(dotX, centerY)
-                        )
+                        // Draw the central circle dot over the needle base
+                        drawCircle(color = Color.White, radius = 18f, center = pivotCenter)
+                        drawCircle(color = DarkSurface, radius = 8f, center = pivotCenter)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Labels below the gauge
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = categoryText,
-                        color = categoryColor,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = "Track weight →",
-                        color = DarkTextSecondary,
-                        fontSize = 12.sp,
-                        modifier = Modifier.clickable { onTrackWeightClick() }
-                    )
-                }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Big Centered Text
+            Text(
+                text = formattedBmi,
+                color = DarkTextPrimary,
+                fontSize = 44.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = categoryText,
+                color = categoryColor,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

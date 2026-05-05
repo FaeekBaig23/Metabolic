@@ -3,7 +3,6 @@ package com.faiqbaig.metabolic.feature.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -32,7 +31,6 @@ fun DashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // The subtle radial gradient glow behind the header
     val backgroundBrush = remember {
         Brush.radialGradient(
             colors = listOf(
@@ -47,30 +45,19 @@ fun DashboardScreen(
     Scaffold(
         bottomBar = {
             MetabolicBottomNav(
-                currentRoute = "dashboard", // Hardcoded for this screen
-                onHomeClick = { /* Already here */ },
+                currentRoute = "dashboard",
+                onHomeClick = { },
                 onTrackerClick = onNavigateToTracker,
+                onCameraClick = onNavigateToCamera, // ── NEW ──
                 onPlansClick = onNavigateToPlans,
                 onProfileClick = onNavigateToProfile
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToCamera,
-                shape = CircleShape,
-                containerColor = MetabolicGreen,
-                contentColor = Color.Black,
-                modifier = Modifier.offset(y = 20.dp) // Sink it slightly into the nav bar
-            ) {
-                Text(text = "📷", fontSize = 24.sp)
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center,
+        // ── REMOVED: floatingActionButton ──
         containerColor = DarkBackground
     ) { paddingValues ->
 
         if (uiState.isLoading) {
-            // Simple loading state
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                 CircularProgressIndicator(color = MetabolicGreen)
             }
@@ -96,7 +83,6 @@ fun DashboardScreen(
                 // Section B: Calorie Ring
                 item {
                     CalorieRingCard(
-                        // ── CHANGED: Now using live totalCalories from Room ──
                         caloriesConsumed = uiState.totalCalories,
                         caloriesRemaining = uiState.caloriesRemaining,
                         dailyCalorieTarget = uiState.dailyCalorieTarget,
@@ -108,20 +94,16 @@ fun DashboardScreen(
                 // Section C: Macro Breakdown
                 item {
                     MacroBreakdownCard(
-                        // ── CHANGED: Now using live macro totals from Room ──
                         proteinConsumed = uiState.totalProtein, proteinTarget = uiState.proteinTarget,
                         carbsConsumed = uiState.totalCarbs, carbsTarget = uiState.carbsTarget,
                         fatConsumed = uiState.totalFat, fatTarget = uiState.fatTarget
                     )
-                    Spacer(modifier = Modifier.height(32.dp))   // 24 to 32 test
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
-
-                // Section D: Quick Actions --- REMOVED --- !!!
 
                 // Section E: Today's Meals
                 item {
                     TodaysMealsSection(
-                        // ── CHANGED: Passed emptyList() since we removed DummyMealLogs ──
                         meals = uiState.todaysMeals,
                         onSeeAllClick = onNavigateToTracker,
                         onLogMealClick = onNavigateToTracker
@@ -138,7 +120,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Section G: BMI Snapshot
+                // Section G: BMI Snapshot (Now much larger!)
                 item {
                     BmiSnapshotCard(
                         bmi = uiState.bmi,
@@ -156,7 +138,6 @@ fun DashboardScreen(
                 // Section I: Gym Teaser
                 item {
                     GymTeaserCard(onExploreClick = onNavigateToMap)
-                    // Section J: Bottom Padding
                     Spacer(modifier = Modifier.height(40.dp))
                 }
             }
@@ -169,6 +150,7 @@ private fun MetabolicBottomNav(
     currentRoute: String,
     onHomeClick: () -> Unit,
     onTrackerClick: () -> Unit,
+    onCameraClick: () -> Unit, // ── NEW ──
     onPlansClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
@@ -190,12 +172,13 @@ private fun MetabolicBottomNav(
             label = { Text("Tracker", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
         )
-        // Empty item to create space for the centered FAB
+        // ── CHANGED: Replaced the empty spacer with the Camera ──
         NavigationBarItem(
-            selected = false,
-            onClick = { },
-            icon = { },
-            enabled = false
+            selected = currentRoute == "camera",
+            onClick = onCameraClick,
+            icon = { Text("📷", fontSize = 20.sp) },
+            label = { Text("Scan", fontSize = 10.sp) },
+            colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
         )
         NavigationBarItem(
             selected = currentRoute == "plans",
