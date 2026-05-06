@@ -2,9 +2,12 @@ package com.faiqbaig.metabolic.di
 
 import android.content.Context
 import com.faiqbaig.metabolic.core.data.local.UserProfileDao
+import com.faiqbaig.metabolic.core.data.local.WeightLogDao
 import com.faiqbaig.metabolic.core.data.repository.MealLogRepositoryImpl
+import com.faiqbaig.metabolic.core.data.repository.WeightLogRepositoryImpl
 import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
 import com.faiqbaig.metabolic.core.domain.repository.MealLogRepository
+import com.faiqbaig.metabolic.core.data.repository.WeightLogRepository
 import com.faiqbaig.metabolic.core.utils.PreferencesManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -39,4 +42,12 @@ object RepositoryModule {
     fun provideMealLogRepository(
         mealLogRepositoryImpl: MealLogRepositoryImpl
     ): MealLogRepository = mealLogRepositoryImpl
+
+    @Provides
+    @Singleton
+    fun provideWeightLogRepository(
+        weightLogDao: WeightLogDao
+    ): WeightLogRepository {
+        return WeightLogRepositoryImpl(weightLogDao)
+    }
 }

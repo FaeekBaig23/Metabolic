@@ -3,6 +3,7 @@ package com.faiqbaig.metabolic.di
 import android.content.Context
 import androidx.room.Room
 import com.faiqbaig.metabolic.core.data.local.MealLogDao // Make sure to add this import
+import com.faiqbaig.metabolic.core.data.local.WeightLogDao
 import com.faiqbaig.metabolic.core.data.local.MetabolicDatabase
 import com.faiqbaig.metabolic.core.data.local.UserProfileDao
 import com.faiqbaig.metabolic.core.utils.PreferencesManager
@@ -42,9 +43,8 @@ object DatabaseModule {
     fun provideMealLogDao(database: MetabolicDatabase): MealLogDao =
         database.mealLogDao // Or database.mealLogDao() if you defined it as a function in MetabolicDatabase
 
-    /*@Provides
-    @Singleton
-    fun providePreferencesManager(
-        @ApplicationContext context: Context
-    ): PreferencesManager = PreferencesManager(context)*/
+    @Provides
+    fun provideWeightLogDao(database: MetabolicDatabase): WeightLogDao {
+        return database.weightLogDao
+    }
 }

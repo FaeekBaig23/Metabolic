@@ -6,20 +6,20 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [UserProfileEntity::class, MealLogEntity::class], // Added MealLogEntity
-    version = 3, // Bumped from 2 to 3
+    entities = [UserProfileEntity::class, MealLogEntity::class, WeightLogEntity::class], // Added WeightLogEntity
+    version = 4, // Bumped from 3 to 4
     exportSchema = false
 )
 abstract class MetabolicDatabase : RoomDatabase() {
 
     abstract val userProfileDao: UserProfileDao
-    abstract val mealLogDao: MealLogDao // Added the new DAO
+    abstract val mealLogDao: MealLogDao
+    abstract val weightLogDao: WeightLogDao // Added the new DAO
 
     companion object {
         // The migration script from v2 to v3
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Create the new meal_logs table exactly as defined in MealLogEntity
                 db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `meal_logs` (
@@ -36,6 +36,26 @@ abstract class MetabolicDatabase : RoomDatabase() {
                         `servingUnit` TEXT NOT NULL,
                         `timestamp` INTEGER NOT NULL,
                         PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        // The migration script from v3 to v4
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create the new weight_logs table exactly as defined in WeightLogEntity
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `weight_logs` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `userId` TEXT NOT NULL,
+                        `weightKg` REAL NOT NULL,
+                        `bmi` REAL NOT NULL,
+                        `date` TEXT NOT NULL,
+                        `note` TEXT,
+                        `timestamp` INTEGER NOT NULL
                     )
                     """.trimIndent()
                 )
