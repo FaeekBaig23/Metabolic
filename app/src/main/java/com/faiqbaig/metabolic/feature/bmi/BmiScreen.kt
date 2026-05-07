@@ -41,7 +41,9 @@ fun BmiScreen(
             item {
                 BmiDialCard(
                     bmi = uiState.currentBmi,
-                    category = uiState.bmiCategory
+                    category = uiState.bmiCategory,
+                    weight = uiState.latestWeightKg, // ── NEW ──
+                    height = uiState.heightCm
                 )
             }
 

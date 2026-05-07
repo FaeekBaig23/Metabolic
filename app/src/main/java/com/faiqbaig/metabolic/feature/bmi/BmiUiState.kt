@@ -10,6 +10,7 @@ data class BmiUiState(
     val currentBmi: Double = 0.0,
     val bmiCategory: String = "",
     val latestWeightKg: Double = 0.0,
+    val heightCm: Double = 0.0,
     val weightInputField: String = "",
     val noteField: String = "",
     val historyFilter: HistoryFilter = HistoryFilter.WEEK,

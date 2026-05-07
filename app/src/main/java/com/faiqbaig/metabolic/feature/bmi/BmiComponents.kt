@@ -42,7 +42,7 @@ val DarkTextPrimary = Color(0xFFE8F5F0)
 val DarkTextSecondary = Color(0xFF8FBFB0)
 
 @Composable
-fun BmiDialCard(bmi: Double, category: String) {
+fun BmiDialCard(bmi: Double, category: String, weight: Double, height: Double) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -61,64 +61,90 @@ fun BmiDialCard(bmi: Double, category: String) {
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Speedometer Canvas
-            Box(
-                modifier = Modifier
-                    .size(200.dp, 100.dp),
-                contentAlignment = Alignment.BottomCenter
+            // ── NEW: Row to place gauge and text side-by-side ──
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Canvas(modifier = Modifier.matchParentSize()) {
-                    val arcBrush = Brush.sweepGradient(
-                        0.0f to MetabolicCyan,    // Underweight
-                        0.3f to MetabolicGreen,   // Normal
-                        0.6f to SemanticWarning,  // Overweight
-                        1.0f to SemanticError     // Obese
-                    )
+                // Speedometer Canvas (Slightly smaller to fit the text column)
+                Box(
+                    modifier = Modifier.size(160.dp, 80.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Canvas(modifier = Modifier.matchParentSize()) {
+                        val arcBrush = Brush.sweepGradient(
+                            0.0f to MetabolicCyan,
+                            0.3f to MetabolicGreen,
+                            0.6f to SemanticWarning,
+                            1.0f to SemanticError
+                        )
 
-                    // Draw Background Arc
-                    drawArc(
-                        brush = arcBrush,
-                        startAngle = 180f,
-                        sweepAngle = 180f,
-                        useCenter = false,
-                        style = Stroke(width = 40f, cap = StrokeCap.Round),
-                        size = Size(size.width, size.height * 2)
-                    )
+                        drawArc(
+                            brush = arcBrush,
+                            startAngle = 180f,
+                            sweepAngle = 180f,
+                            useCenter = false,
+                            style = Stroke(width = 40f, cap = StrokeCap.Round),
+                            size = Size(size.width, size.height * 2)
+                        )
 
-                    // Calculate Needle Angle (Clamp BMI between 15 and 35 for visualization)
-                    val minBmi = 15f
-                    val maxBmi = 35f
-                    val clampedBmi = bmi.toFloat().coerceIn(minBmi, maxBmi)
-                    val progress = (clampedBmi - minBmi) / (maxBmi - minBmi)
-                    val angleDegrees = 180f + (progress * 180f)
-                    val angleRadians = Math.toRadians(angleDegrees.toDouble())
+                        val minBmi = 15f
+                        val maxBmi = 35f
+                        val clampedBmi = bmi.toFloat().coerceIn(minBmi, maxBmi)
+                        val progress = (clampedBmi - minBmi) / (maxBmi - minBmi)
+                        val angleDegrees = 180f + (progress * 180f)
+                        val angleRadians = Math.toRadians(angleDegrees.toDouble())
 
-                    // Draw Needle
-                    val needleLength = size.width / 2 - 20f
-                    val centerX = size.width / 2
-                    val centerY = size.height
+                        val needleLength = size.width / 2 - 20f
+                        val centerX = size.width / 2
+                        val centerY = size.height
 
-                    val endX = centerX + (needleLength * cos(angleRadians)).toFloat()
-                    val endY = centerY + (needleLength * sin(angleRadians)).toFloat()
+                        val endX = centerX + (needleLength * kotlin.math.cos(angleRadians)).toFloat()
+                        val endY = centerY + (needleLength * kotlin.math.sin(angleRadians)).toFloat()
 
-                    drawLine(
+                        drawLine(
+                            color = Color.White,
+                            start = Offset(centerX, centerY),
+                            end = Offset(endX, endY),
+                            strokeWidth = 8f,
+                            cap = StrokeCap.Round
+                        )
+                        drawCircle(
+                            color = Color.White,
+                            radius = 12f,
+                            center = Offset(centerX, centerY)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(32.dp))
+
+                // ── NEW: Right side stats column ──
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text("Weight", color = MetabolicGreen, fontSize = 14.sp)
+                    Text(
+                        text = "${String.format(java.util.Locale.US, "%.1f", weight)} kg",
                         color = Color.White,
-                        start = Offset(centerX, centerY),
-                        end = Offset(endX, endY),
-                        strokeWidth = 8f,
-                        cap = StrokeCap.Round
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
                     )
-                    drawCircle(
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("Height", color = MetabolicGreen, fontSize = 14.sp)
+                    Text(
+                        text = "${String.format(java.util.Locale.US, "%.1f", height)} cm",
                         color = Color.White,
-                        radius = 12f,
-                        center = Offset(centerX, centerY)
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = String.format("%.1f", bmi),
+                text = String.format(java.util.Locale.US, "%.1f", bmi),
                 color = DarkTextPrimary,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold

@@ -40,9 +40,13 @@ class BmiViewModel @Inject constructor(
                     // FIX: Converted Float to Double to match BmiUiState
                     userHeightCm = it.heightCm.toDouble()
 
+                    // ── UPDATE the UiState to include the height ──
+                    _uiState.update { state -> state.copy(heightCm = it.heightCm.toDouble()) }
+
                     // If no logs exist yet, compute initial BMI from profile weight
                     if (_uiState.value.latestWeightKg == 0.0) {
                         updateBmiCalculation(it.weightKg.toDouble())
+                        _uiState.update { state -> state.copy(latestWeightKg = it.weightKg.toDouble()) }
                     }
                 }
             }
