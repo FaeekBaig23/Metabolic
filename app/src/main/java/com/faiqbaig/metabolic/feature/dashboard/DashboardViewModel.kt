@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
 import com.faiqbaig.metabolic.core.domain.repository.MealLogRepository
+import com.faiqbaig.metabolic.core.data.repository.WeightLogRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,7 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     private val repository: UserProfileRepository,
     private val auth: FirebaseAuth,
-    // ── CHANGED: Injected the MealLogRepository ──
+    private val weightLogRepository: WeightLogRepository,
     private val mealLogRepository: MealLogRepository
 ) : ViewModel() {
 
@@ -35,7 +36,8 @@ class DashboardViewModel @Inject constructor(
 
     init {
         observeUserProfile()
-        observeDailyTotals() // ── NEW: Start listening to meals immediately ──
+        observeDailyTotals() // Listen to meals
+        observeLatestWeightLog() // ── NEW: Listen to weight logs immediately ──
     }
 
     private fun observeUserProfile() {
@@ -49,6 +51,10 @@ class DashboardViewModel @Inject constructor(
             .onEach { profile ->
                 if (profile != null) {
                     _uiState.update { state ->
+                        // Only set BMI from profile if it hasn't been overridden by a newer weight log yet
+                        // (The separate observer handles updates, but this gives an initial value if no logs exist)
+                        val currentBmi = if (state.bmi == 0.0) profile.bmi.toDouble() else state.bmi
+
                         state.copy(
                             userName = profile.name,
                             goal = profile.goal,
@@ -57,7 +63,7 @@ class DashboardViewModel @Inject constructor(
                             proteinTarget = profile.dailyProteinTarget,
                             carbsTarget = profile.dailyCarbsTarget,
                             fatTarget = profile.dailyFatTarget,
-                            bmi = profile.bmi.toDouble(),
+                            bmi = currentBmi,
                             isLoading = false
                         )
                     }
@@ -71,17 +77,31 @@ class DashboardViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    // ── NEW: Listen to Room database for meal updates ──
+    // ── NEW: Listen to Room database for the latest weight/BMI update ──
+    private fun observeLatestWeightLog() {
+        val userId = auth.currentUser?.uid ?: return
+
+        weightLogRepository.getLatestLog(userId)
+            .onEach { latestLog ->
+                if (latestLog != null) {
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            bmi = latestLog.bmi
+                        )
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    // Listen to Room database for meal updates
     private fun observeDailyTotals() {
         val userId = auth.currentUser?.uid ?: return
 
-        // Because getTodaysMeals returns a Flow, this will automatically re-run
-        // every single time a meal is added or deleted in the Tracker!
         mealLogRepository.getTodaysMeals(userId, todayDateString)
             .onEach { meals ->
                 _uiState.update { currentState ->
                     currentState.copy(
-                        // Make sure your DashboardUiState has these properties!
                         todaysMeals = meals,
                         totalCalories = meals.sumOf { it.calories },
                         totalProtein = meals.sumOf { it.protein },
