@@ -27,6 +27,7 @@ import com.faiqbaig.metabolic.feature.auth.SplashScreen
 import com.faiqbaig.metabolic.feature.onboarding.OnboardingScreen
 import com.faiqbaig.metabolic.feature.profile.ProfileSetupScreen
 import com.faiqbaig.metabolic.feature.dashboard.DashboardScreen
+import com.faiqbaig.metabolic.feature.bmi.BmiScreen
 
 // ── NEW: Import your Tracker Screen ──
 import com.faiqbaig.metabolic.feature.tracker.TrackerScreen
@@ -174,8 +175,8 @@ fun MetabolicNavGraph(
         }
 
         // ── BMI ──────────────────────────────────────────────
-        composable(Screen.Bmi.route) {
-            PlaceholderScreen(name = "BMI")
+        composable(route = Screen.Bmi.route) { // Or "bmi" depending on your Screen.kt setup
+            BmiScreen()
         }
 
         // ── Profile ──────────────────────────────────────────
