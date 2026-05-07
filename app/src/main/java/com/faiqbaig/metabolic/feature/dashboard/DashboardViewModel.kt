@@ -14,17 +14,21 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import javax.inject.Inject
+
+import com.faiqbaig.metabolic.core.utils.PreferencesManager
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val repository: UserProfileRepository,
     private val auth: FirebaseAuth,
     private val weightLogRepository: WeightLogRepository,
-    private val mealLogRepository: MealLogRepository
+    private val mealLogRepository: MealLogRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -38,6 +42,7 @@ class DashboardViewModel @Inject constructor(
         observeUserProfile()
         observeDailyTotals() // Listen to meals
         observeLatestWeightLog() // ── NEW: Listen to weight logs immediately ──
+        observeWaterIntake()
     }
 
     private fun observeUserProfile() {
@@ -126,11 +131,18 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun addWater(amountMl: Int) {
-        // Stub: In the future, this will write to the Room DB
-        _uiState.update { currentState ->
-            currentState.copy(
-                waterConsumedMl = currentState.waterConsumedMl + amountMl
-            )
+        viewModelScope.launch {
+            // Write directly to DataStore.
+            // The observeWaterIntake() flow will automatically catch the change and update the UI!
+            preferencesManager.addWater(amountMl)
         }
+    }
+
+    private fun observeWaterIntake() {
+        preferencesManager.waterConsumedFlow
+            .onEach { waterAmount ->
+                _uiState.update { it.copy(waterConsumedMl = waterAmount) }
+            }
+            .launchIn(viewModelScope)
     }
 }
