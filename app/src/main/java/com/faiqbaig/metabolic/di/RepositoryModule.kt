@@ -8,6 +8,8 @@ import com.faiqbaig.metabolic.core.data.repository.WeightLogRepositoryImpl
 import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
 import com.faiqbaig.metabolic.core.domain.repository.MealLogRepository
 import com.faiqbaig.metabolic.core.data.repository.WeightLogRepository
+import com.faiqbaig.metabolic.core.data.repository.GeminiRepository
+import com.faiqbaig.metabolic.core.data.repository.GeminiRepositoryImpl
 import com.faiqbaig.metabolic.core.utils.PreferencesManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -49,5 +51,11 @@ object RepositoryModule {
         weightLogDao: WeightLogDao
     ): WeightLogRepository {
         return WeightLogRepositoryImpl(weightLogDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGeminiRepository(): GeminiRepository {
+        return GeminiRepositoryImpl()
     }
 }

@@ -36,6 +36,7 @@ android {
         }
 
         buildConfigField("String", "USDA_API_KEY", "\"${properties.getProperty("USDA_API_KEY", "")}\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"${properties.getProperty("GEMINI_API_KEY", "")}\"")
     }
 
     buildTypes {
@@ -120,6 +121,9 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
+
+    // Google Gemini Generative AI SDK
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // Maps
     implementation(libs.maps.compose)
