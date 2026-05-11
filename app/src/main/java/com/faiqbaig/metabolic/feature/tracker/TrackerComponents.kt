@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.faiqbaig.metabolic.core.data.local.MealLogEntity
 import com.faiqbaig.metabolic.core.data.remote.UsdaFood
+import androidx.compose.material.icons.filled.CameraAlt
 
 @Composable
 fun DailySummaryBar(
@@ -56,22 +57,35 @@ fun FoodSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onClearClick: () -> Unit,
+    onCameraClick: () -> Unit, // ── NEW ──
     modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(),
         placeholder = { Text("Search for a food...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
         trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = onClearClick) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear search")
+            Row {
+                // Show clear button if there's text
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = onClearClick) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    }
+                }
+                // Always show the Camera button
+                IconButton(onClick = onCameraClick) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Scan Meal",
+                        // Make sure you import your MetabolicGreen or use MaterialTheme colors
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         },
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         singleLine = true
     )
 }

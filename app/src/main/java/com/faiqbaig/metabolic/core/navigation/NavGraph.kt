@@ -121,6 +121,16 @@ fun MetabolicNavGraph(
                         restoreState = true
                     }
                 },
+                // ── CHANGED: Chatbot now uses state-saving tab logic ──
+                onNavigateToChatbot = {
+                    navController.navigate(Screen.Chatbot.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onNavigateToPlans = {
                     navController.navigate(Screen.Plans.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
@@ -140,18 +150,19 @@ fun MetabolicNavGraph(
                     }
                 },
 
-                // Standard Screens (FAB and Cards)
-                onNavigateToCamera = { navController.navigate(Screen.Camera.route) },
-                onNavigateToChatbot = { navController.navigate(Screen.Chatbot.route) },
+                // Standard Screens (Cards)
                 onNavigateToMap = { navController.navigate(Screen.Map.route) },
                 onNavigateToBmi = { navController.navigate(Screen.Bmi.route) }
+                // Note: onNavigateToCamera was removed here since it moved to the Tracker
             )
         }
 
         // ── Tracker ──────────────────────────────────────────
         composable(Screen.Tracker.route) {
-            // ── CHANGED: Replaced the Placeholder with the real screen ──
-            TrackerScreen()
+            TrackerScreen(
+                // ── NEW: Camera navigation trigger is now passed to the Tracker ──
+                onNavigateToCamera = { navController.navigate(Screen.Camera.route) }
+            )
         }
 
         // ── Camera ───────────────────────────────────────────

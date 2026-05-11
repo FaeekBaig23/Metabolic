@@ -10,10 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackerScreen(
+    onNavigateToCamera: () -> Unit,
     viewModel: TrackerViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -49,6 +51,7 @@ fun TrackerScreen(
                 query = state.searchQuery,
                 onQueryChange = viewModel::onSearchQueryChange,
                 onClearClick = viewModel::clearSearch,
+                onCameraClick = onNavigateToCamera, // ── NEW: Pass the camera trigger ──
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -74,7 +77,6 @@ fun TrackerScreen(
                             SearchResultItem(
                                 food = food,
                                 onAddClick = {
-                                    // We will open the Add Meal Bottom Sheet here next!
                                     selectedFoodForLogging = food
                                 },
                                 modifier = Modifier.padding(bottom = 8.dp)
@@ -92,9 +94,10 @@ fun TrackerScreen(
                         item {
                             Text(
                                 text = type,
-                                style = MaterialTheme.typography.titleLarge,
+                                // ── CHANGED: Added explicit fontSize and tweaked padding ──
+                                fontSize = 28.sp,   //---24 to 28
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(top = 24.dp, bottom = 12.dp)
                             )
                         }
 

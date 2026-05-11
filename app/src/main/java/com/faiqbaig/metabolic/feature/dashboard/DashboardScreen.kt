@@ -22,7 +22,6 @@ import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
 fun DashboardScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToTracker: () -> Unit,
-    onNavigateToCamera: () -> Unit,
     onNavigateToPlans: () -> Unit,
     onNavigateToChatbot: () -> Unit,
     onNavigateToMap: () -> Unit,
@@ -48,7 +47,7 @@ fun DashboardScreen(
                 currentRoute = "dashboard",
                 onHomeClick = { },
                 onTrackerClick = onNavigateToTracker,
-                onCameraClick = onNavigateToCamera, // ── NEW ──
+                onChatClick = onNavigateToChatbot, // ── changed from Camera to Chatbot ──
                 onPlansClick = onNavigateToPlans,
                 onProfileClick = onNavigateToProfile
             )
@@ -151,7 +150,7 @@ private fun MetabolicBottomNav(
     currentRoute: String,
     onHomeClick: () -> Unit,
     onTrackerClick: () -> Unit,
-    onCameraClick: () -> Unit, // ── NEW ──
+    onChatClick: () -> Unit, // ── changed from Camera to Chatbot ──
     onPlansClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
@@ -173,12 +172,12 @@ private fun MetabolicBottomNav(
             label = { Text("Tracker", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
         )
-        // ── CHANGED: Replaced the empty spacer with the Camera ──
+        // ── CHANGED: Replaced Camera with Chatbot ──
         NavigationBarItem(
-            selected = currentRoute == "camera",
-            onClick = onCameraClick,
-            icon = { Text("📷", fontSize = 20.sp) },
-            label = { Text("Scan", fontSize = 10.sp) },
+            selected = currentRoute == "chatbot",
+            onClick = onChatClick,
+            icon = { Text("✨", fontSize = 20.sp) }, // Or 🤖
+            label = { Text("Chat", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
         )
         NavigationBarItem(
