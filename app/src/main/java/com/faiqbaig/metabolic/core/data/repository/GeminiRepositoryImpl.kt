@@ -15,7 +15,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
     // We use gemini-1.5-flash as it is the fastest and supports both text and multimodal (images)
     private val generativeModel = GenerativeModel(
-        modelName = "gemini-1.5-flash",
+        modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY,
         systemInstruction = content {
             text(

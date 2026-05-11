@@ -3,6 +3,8 @@ package com.faiqbaig.metabolic.feature.tracker
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,7 +17,7 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackerScreen(
-    onNavigateToCamera: () -> Unit,
+    onNavigateToGemini: () -> Unit,
     viewModel: TrackerViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -46,14 +48,25 @@ fun TrackerScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // 2. The Search Bar
-            FoodSearchBar(
-                query = state.searchQuery,
-                onQueryChange = viewModel::onSearchQueryChange,
-                onClearClick = viewModel::clearSearch,
-                onCameraClick = onNavigateToCamera, // ── NEW: Pass the camera trigger ──
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            // 2. The AI Logging Button (Replaced Search Bar)
+            Button(
+                onClick = onNavigateToGemini,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                // Uses your primary color (MetabolicGreen)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                // The classic AI sparkle star
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.AutoAwesome,
+                    contentDescription = "AI Scanner"
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Log a meal", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
 
             // 3. Dynamic Content List
             LazyColumn(

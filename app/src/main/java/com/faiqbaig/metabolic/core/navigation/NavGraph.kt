@@ -11,7 +11,6 @@ import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
 import androidx.compose.ui.Alignment
 
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.faiqbaig.metabolic.feature.auth.AuthViewModel
 
 import androidx.navigation.NavGraph.Companion.findStartDestination
 
@@ -28,6 +27,7 @@ import com.faiqbaig.metabolic.feature.onboarding.OnboardingScreen
 import com.faiqbaig.metabolic.feature.profile.ProfileSetupScreen
 import com.faiqbaig.metabolic.feature.dashboard.DashboardScreen
 import com.faiqbaig.metabolic.feature.bmi.BmiScreen
+import com.faiqbaig.metabolic.feature.camera.GeminiScreen
 
 // ── NEW: Import your Tracker Screen ──
 import com.faiqbaig.metabolic.feature.tracker.TrackerScreen
@@ -160,14 +160,32 @@ fun MetabolicNavGraph(
         // ── Tracker ──────────────────────────────────────────
         composable(Screen.Tracker.route) {
             TrackerScreen(
-                // ── NEW: Camera navigation trigger is now passed to the Tracker ──
-                onNavigateToCamera = { navController.navigate(Screen.Camera.route) }
+                // ── UPDATED ──
+                onNavigateToGemini = { navController.navigate("gemini_screen") }
             )
         }
 
-        // ── Camera ───────────────────────────────────────────
-        composable(Screen.Camera.route) {
-            PlaceholderScreen(name = "Camera")
+        // ── Gemini (Formerly Camera) ─────────────────────────
+        // Update this route to match whatever you pass in the navigate call above
+        composable("gemini_screen") {
+            val trackerViewModel: com.faiqbaig.metabolic.feature.tracker.TrackerViewModel = hiltViewModel()
+
+            GeminiScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onLogMeal = { analysis, mealType ->
+                    trackerViewModel.logMeal(
+                        foodName = analysis.foodName,
+                        calories = analysis.calories,
+                        protein = analysis.protein.toInt(),
+                        carbs = analysis.carbs.toInt(),
+                        fat = analysis.fat.toInt(),
+                        servingQty = analysis.estimatedWeightG.toFloat(),
+                        servingUnit = "g",
+                        mealType = mealType
+                    )
+                    navController.popBackStack()
+                }
+            )
         }
 
         // ── Plans ────────────────────────────────────────────
