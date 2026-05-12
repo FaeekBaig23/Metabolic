@@ -3,16 +3,17 @@ package com.faiqbaig.metabolic.feature.chatbot
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +29,9 @@ fun ChatbotScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    // ── NEW: State to control the Help Dialog visibility ──
+    var showHelpDialog by remember { mutableStateOf(false) }
+
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -39,6 +43,16 @@ fun ChatbotScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Metabolic AI") },
+                // ── NEW: Added the Help Icon Action ──
+                actions = {
+                    IconButton(onClick = { showHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.HelpOutline,
+                            contentDescription = "Help & Information",
+                            tint = MaterialTheme.colorScheme.primary // Forces Metabolic Green
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
@@ -47,7 +61,7 @@ fun ChatbotScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .imePadding() // ── ADD THIS MAGIC LINE ──
+                .imePadding()
         ) {
             // ── Chat History ──
             LazyColumn(
@@ -56,10 +70,10 @@ fun ChatbotScreen(
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                // ── FIXED: Compose requires 'top' and 'bottom', not 'vertical' and 'bottom' ──
                 contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
             ) {
-                items(messages) { msg ->
+                items(count = messages.size) { index ->
+                    val msg = messages[index]
                     ChatBubble(message = msg)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -95,7 +109,6 @@ fun ChatbotScreen(
                         onClick = {
                             viewModel.sendMessage()
                             coroutineScope.launch {
-                                // Small delay to allow list to update before scrolling
                                 kotlinx.coroutines.delay(100)
                                 if (messages.isNotEmpty()) {
                                     listState.animateScrollToItem(messages.size - 1)
@@ -116,6 +129,55 @@ fun ChatbotScreen(
                 }
             }
         }
+    }
+
+    // ── NEW: The Help Dialog ──
+    if (showHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showHelpDialog = false },
+            title = {
+                Text(text = "About Metabolic AI", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column {
+                    Text("Powered by advanced AI, I am here to act as your personal fitness and nutrition assistant.")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("✨ What I can help with:", fontWeight = FontWeight.Bold)
+                    Text("• Suggesting workout routines & exercises")
+                    Text("• Providing recipe ideas & macro estimates")
+                    Text("• Explaining fitness concepts & muscle targeting")
+                    Text("• General health and wellness tips")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("🚫 Limitations:", fontWeight = FontWeight.Bold)
+                    Text("• I cannot provide professional medical advice.")
+                    Text("• I do not have access to real-time internet data.")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Disclaimers
+                    Text(
+                        text = "⚠️ Disclaimer: Your chat history is temporary. If you navigate to another screen or close the app, this conversation will be cleared.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "⚠️ Note: AI models can occasionally make mistakes. Please verify important information.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showHelpDialog = false }) {
+                    Text("Got it", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        )
     }
 }
 
