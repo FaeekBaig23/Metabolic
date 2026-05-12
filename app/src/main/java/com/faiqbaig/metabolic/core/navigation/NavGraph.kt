@@ -195,7 +195,8 @@ fun MetabolicNavGraph(
 
         // ── Chatbot ──────────────────────────────────────────
         composable(Screen.Chatbot.route) {
-            PlaceholderScreen(name = "Chatbot")
+            // ── This clears the yellow "never used" warning from ChatbotScreen.kt ──
+            com.faiqbaig.metabolic.feature.chatbot.ChatbotScreen()
         }
 
         // ── Map ──────────────────────────────────────────────

@@ -38,6 +38,15 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
         }
     )
 
+    // ── NEW: A separate model specifically for the Chatbot ──
+    private val chatModel = GenerativeModel(
+        modelName = "gemini-2.5-flash",
+        apiKey = BuildConfig.GEMINI_API_KEY,
+        systemInstruction = content {
+            text("You are a highly knowledgeable, encouraging, and friendly fitness and nutrition AI assistant for an app called Metabolic. Your job is to help users with workout routines, exercise advice, muscle targeting, diet plans, and general health tips. Keep your answers concise, easy to read on a mobile screen, and use bullet points when listing exercises or foods.")
+        }
+    )
+
     override suspend fun analyzeMealFromImage(bitmap: Bitmap): Result<GeminiFoodAnalysis> = withContext(Dispatchers.IO) {
         try {
             val response = generativeModel.generateContent(
@@ -90,6 +99,16 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
             Result.success(analysis)
         } catch (e: Exception) {
             Result.failure(Exception("Could not read nutritional data. Please try again or take a clearer photo."))
+        }
+    }
+
+    override suspend fun getChatResponse(prompt: String): Result<String> {
+        return try {
+            // ── CHANGED: Make sure this says chatModel! ──
+            val response = chatModel.generateContent(prompt)
+            Result.success(response.text ?: "I'm sorry, I couldn't process that.")
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
