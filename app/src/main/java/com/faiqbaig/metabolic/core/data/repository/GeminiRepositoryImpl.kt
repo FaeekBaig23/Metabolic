@@ -107,10 +107,21 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
         }
     }
 
-    override suspend fun getChatResponse(prompt: String): Result<String> {
+    override suspend fun getChatResponse(prompt: String, userContext: String): Result<String> {
         return try {
-            // ── CHANGED: Make sure this says chatModel! ──
-            val response = chatModel.generateContent(prompt)
+            // Invisible context injection
+            val enrichedPrompt = if (userContext.isNotBlank()) {
+                """
+                [System Note: The user has the following profile stats: $userContext. 
+                Keep this in mind for personalized advice, but do NOT awkwardly mention these stats unless it is directly relevant to their question.]
+                
+                User's message: $prompt
+                """.trimIndent()
+            } else {
+                prompt
+            }
+
+            val response = chatModel.generateContent(enrichedPrompt)
             Result.success(response.text ?: "I'm sorry, I couldn't process that.")
         } catch (e: Exception) {
             Result.failure(e)
