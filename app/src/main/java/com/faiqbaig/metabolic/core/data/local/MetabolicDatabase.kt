@@ -6,15 +6,22 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [UserProfileEntity::class, MealLogEntity::class, WeightLogEntity::class], // Added WeightLogEntity
-    version = 4, // Bumped from 3 to 4
+    entities = [
+        UserProfileEntity::class,
+        MealLogEntity::class,
+        WeightLogEntity::class,
+        DietPlanEntity::class,      // Added
+        DietPlanMealEntity::class   // Added
+    ],
+    version = 5, // Bumped from 4 to 5
     exportSchema = false
 )
 abstract class MetabolicDatabase : RoomDatabase() {
 
     abstract val userProfileDao: UserProfileDao
     abstract val mealLogDao: MealLogDao
-    abstract val weightLogDao: WeightLogDao // Added the new DAO
+    abstract val weightLogDao: WeightLogDao
+    abstract val dietPlanDao: DietPlanDao // Added the new DAO
 
     companion object {
         // The migration script from v2 to v3
@@ -59,6 +66,45 @@ abstract class MetabolicDatabase : RoomDatabase() {
                     )
                     """.trimIndent()
                 )
+            }
+        }
+
+        // The migration script from v4 to v5
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create diet_plans table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `diet_plans` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `userId` TEXT NOT NULL, 
+                        `generatedAt` INTEGER NOT NULL, 
+                        `weekStartDate` TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                // Create diet_plan_meals table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `diet_plan_meals` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `planId` INTEGER NOT NULL, 
+                        `dayIndex` INTEGER NOT NULL, 
+                        `mealType` TEXT NOT NULL, 
+                        `foodName` TEXT NOT NULL, 
+                        `calories` INTEGER NOT NULL, 
+                        `protein` REAL NOT NULL, 
+                        `carbs` REAL NOT NULL, 
+                        `fat` REAL NOT NULL, 
+                        `estimatedWeightG` REAL NOT NULL, 
+                        FOREIGN KEY(`planId`) REFERENCES `diet_plans`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                    """.trimIndent()
+                )
+
+                // Create index for foreign key to prevent full table scans on cascade deletes
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_diet_plan_meals_planId` ON `diet_plan_meals` (`planId`)")
             }
         }
     }

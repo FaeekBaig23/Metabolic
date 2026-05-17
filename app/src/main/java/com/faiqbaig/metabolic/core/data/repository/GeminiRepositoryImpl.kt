@@ -10,6 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import javax.inject.Inject
+import com.faiqbaig.metabolic.core.data.local.UserProfileEntity
+import com.faiqbaig.metabolic.core.data.remote.DietPlanResponse
+import com.squareup.moshi.Moshi
 
 class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
@@ -126,6 +129,63 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
             val response = chatModel.generateContent(enrichedPrompt)
             Result.success(response.text ?: "I'm sorry, I couldn't process that.")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun generateDietPlan(profile: UserProfileEntity): Result<DietPlanResponse> {
+        return try {
+            // Construct a strict prompt using the user's profile data
+            val prompt = """
+            You are a professional sports nutritionist. Generate a personalized 7-day meal plan for a user with the following profile:
+            - Goal: ${profile.goal}
+            - Activity Level: ${profile.activityLevel}
+            - Diet Type: ${profile.dietType}
+            - Allergies to EXCLUDE: ${profile.allergies.ifBlank { "None" }}
+            - Medical Conditions to consider: ${profile.medicalConditions.ifBlank { "None" }}
+            - Daily Targets: ${profile.dailyCalorieTarget} kcal, ${profile.dailyProteinTarget}g Protein, ${profile.dailyCarbsTarget}g Carbs, ${profile.dailyFatTarget}g Fat.
+
+            Requirements:
+            1. Provide exactly 7 days of meals (dayIndex 0 to 6, where 0 is Monday).
+            2. Each day must include realistic, culturally accessible meals categorized by mealType ("Breakfast", "Lunch", "Dinner", "Snack").
+            3. Vary the meals across the 7 days (do not repeat the same meal on consecutive days).
+            4. The total daily macros for each day should closely align with the user's Daily Targets.
+            5. Return ONLY a valid JSON object matching this schema exactly. No markdown, no preamble, no code blocks:
+            {
+              "days": [
+                {
+                  "dayIndex": 0,
+                  "meals": [
+                    {
+                      "mealType": "Breakfast",
+                      "foodName": "Oatmeal with Banana",
+                      "estimatedWeightG": 300.0,
+                      "calories": 350,
+                      "protein": 12.0,
+                      "carbs": 60.0,
+                      "fat": 6.0
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+            // Configure the model to return JSON
+            val model = generativeModel // Assuming you have this initialized
+            val response = model.generateContent(prompt)
+
+            val jsonText = response.text?.trim()?.removePrefix("```json")?.removeSuffix("```")?.trim()
+                ?: throw Exception("Empty response from Gemini")
+
+            // Parse JSON using Moshi (or kotlinx.serialization if you are using that instead)
+            val moshi = Moshi.Builder().build()
+            val adapter = moshi.adapter(DietPlanResponse::class.java)
+            val planResponse = adapter.fromJson(jsonText)
+                ?: throw Exception("Failed to parse Gemini JSON response")
+
+            Result.success(planResponse)
         } catch (e: Exception) {
             Result.failure(e)
         }
