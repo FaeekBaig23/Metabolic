@@ -6,7 +6,10 @@ import com.faiqbaig.metabolic.core.data.local.DietPlanMealEntity
 import com.faiqbaig.metabolic.core.data.local.MealLogDao
 import com.faiqbaig.metabolic.core.data.local.MealLogEntity
 import com.faiqbaig.metabolic.core.data.local.UserProfileEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -21,14 +24,11 @@ class DietPlanRepositoryImpl @Inject constructor(
 
     override suspend fun generateAndSavePlan(userId: String, profile: UserProfileEntity): Result<Unit> {
         return try {
-            // 1. Fetch AI generated plan from Gemini (we will implement this in GeminiRepository next)
             val generatedPlanResponse = geminiRepository.generateDietPlan(profile).getOrThrow()
 
-            // 2. Calculate the Monday of the current week
             val today = LocalDate.now()
             val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString()
 
-            // 3. Create and insert the master plan entity
             val planEntity = DietPlanEntity(
                 userId = userId,
                 generatedAt = System.currentTimeMillis(),
@@ -36,7 +36,6 @@ class DietPlanRepositoryImpl @Inject constructor(
             )
             val planId = dietPlanDao.insertPlan(planEntity).toInt()
 
-            // 4. Map the Gemini JSON response to Room entities
             val mealEntities = generatedPlanResponse.days.flatMap { day ->
                 day.meals.map { meal ->
                     DietPlanMealEntity(
@@ -53,7 +52,6 @@ class DietPlanRepositoryImpl @Inject constructor(
                 }
             }
 
-            // 5. Insert all meals
             dietPlanDao.insertMeals(mealEntities)
 
             Result.success(Unit)
@@ -62,23 +60,25 @@ class DietPlanRepositoryImpl @Inject constructor(
         }
     }
 
+    // THE FIX: Safely flattening the relational Flow instead of blocking it with collect
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getActivePlan(userId: String): Flow<DietPlanWithMeals?> {
-        return dietPlanDao.getActivePlan(userId).map { plan ->
-            if (plan == null) return@map null
-
-            // Collect the meals for this plan
-            var mealsByDay: Map<Int, List<DietPlanMealEntity>> = emptyMap()
-            dietPlanDao.getMealsForPlan(plan.id).collect { meals ->
-                mealsByDay = meals.groupBy { it.dayIndex }
+        return dietPlanDao.getActivePlan(userId).flatMapLatest { plan ->
+            if (plan == null) {
+                flowOf(null)
+            } else {
+                dietPlanDao.getMealsForPlan(plan.id).map { meals ->
+                    DietPlanWithMeals(
+                        plan = plan,
+                        mealsByDay = meals.groupBy { it.dayIndex }
+                    )
+                }
             }
-
-            DietPlanWithMeals(plan = plan, mealsByDay = mealsByDay)
         }
     }
 
     override suspend fun regeneratePlan(userId: String, profile: UserProfileEntity): Result<Unit> {
         return try {
-            // Cascade delete handles removing the old meals automatically
             dietPlanDao.deleteAllPlansForUser(userId)
             generateAndSavePlan(userId, profile)
         } catch (e: Exception) {
@@ -89,16 +89,17 @@ class DietPlanRepositoryImpl @Inject constructor(
     override suspend fun logMealFromPlan(meal: DietPlanMealEntity, date: String): Result<Unit> {
         return try {
             val mealLog = MealLogEntity(
-                userId = "CURRENT_USER_ID", // TODO: Fetch from Auth/Session manager
+                id = java.util.UUID.randomUUID().toString(),
+                userId = "CURRENT_USER_ID", // TODO: Fetch from Session Manager
                 date = date,
                 mealType = meal.mealType,
                 foodName = meal.foodName,
                 calories = meal.calories,
-                protein = meal.protein.toInt(), // Cast to Int to match current entity
-                carbs = meal.carbs.toInt(),     // Cast to Int
-                fat = meal.fat.toInt(),         // Cast to Int
-                servingQty = meal.estimatedWeightG.toFloat(), // Map to servingQty
-                servingUnit = "g",                  // Provide a default string
+                protein = meal.protein.toInt(),     // Cast Double to Int
+                carbs = meal.carbs.toInt(),         // Cast Double to Int
+                fat = meal.fat.toInt(),             // Cast Double to Int
+                servingQty = meal.estimatedWeightG.toFloat(), // Map to your existing servingQty field
+                servingUnit = "g",                  // Provide default unit
                 timestamp = System.currentTimeMillis()
             )
             mealLogDao.insertMealLog(mealLog)

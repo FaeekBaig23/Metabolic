@@ -3,6 +3,8 @@ package com.faiqbaig.metabolic.di
 import android.content.Context
 import com.faiqbaig.metabolic.core.data.local.UserProfileDao
 import com.faiqbaig.metabolic.core.data.local.WeightLogDao
+import com.faiqbaig.metabolic.core.data.repository.DietPlanRepository
+import com.faiqbaig.metabolic.core.data.repository.DietPlanRepositoryImpl
 import com.faiqbaig.metabolic.core.data.repository.MealLogRepositoryImpl
 import com.faiqbaig.metabolic.core.data.repository.WeightLogRepositoryImpl
 import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
@@ -57,5 +59,13 @@ object RepositoryModule {
     @Singleton
     fun provideGeminiRepository(): GeminiRepository {
         return GeminiRepositoryImpl()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDietPlanRepository(
+        impl: DietPlanRepositoryImpl
+    ): DietPlanRepository {
+        return impl
     }
 }

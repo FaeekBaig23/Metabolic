@@ -125,6 +125,10 @@ dependencies {
     // Google Gemini Generative AI SDK
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
+    //Moshi
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("com.squareup.moshi:moshi-adapters:1.15.0")
+
     // Maps
     implementation(libs.maps.compose)
     implementation(libs.maps.places)

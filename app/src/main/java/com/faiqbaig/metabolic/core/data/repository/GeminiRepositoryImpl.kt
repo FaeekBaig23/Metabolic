@@ -1,11 +1,11 @@
 package com.faiqbaig.metabolic.core.data.repository
 
-
 import android.graphics.Bitmap
 import com.faiqbaig.metabolic.BuildConfig
 import com.faiqbaig.metabolic.core.data.remote.GeminiFoodAnalysis
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
+import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -13,11 +13,12 @@ import javax.inject.Inject
 import com.faiqbaig.metabolic.core.data.local.UserProfileEntity
 import com.faiqbaig.metabolic.core.data.remote.DietPlanResponse
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
-    // We use gemini-1.5-flash as it is the fastest and supports both text and multimodal (images)
-    private val generativeModel = GenerativeModel(
+    // ── 1. The Meal Scanner Model ──
+    private val mealAnalysisModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY,
         systemInstruction = content {
@@ -41,7 +42,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
         }
     )
 
-    // ── The Chatbot Model ──
+    // ── 2. The Chatbot Model ──
     private val chatModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY,
@@ -58,9 +59,18 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
         }
     )
 
+    // ── 3. The Diet Plan Generator Model ──
+    private val dietPlanModel = GenerativeModel(
+        modelName = "gemini-2.5-flash",
+        apiKey = BuildConfig.GEMINI_API_KEY,
+        generationConfig = generationConfig {
+            responseMimeType = "application/json" // Native SDK enforcement for pure JSON
+        }
+    )
+
     override suspend fun analyzeMealFromImage(bitmap: Bitmap): Result<GeminiFoodAnalysis> = withContext(Dispatchers.IO) {
         try {
-            val response = generativeModel.generateContent(
+            val response = mealAnalysisModel.generateContent(
                 content {
                     image(bitmap)
                     text("Analyze this meal and provide the nutritional breakdown.")
@@ -74,7 +84,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
     override suspend fun analyzeMealFromText(description: String): Result<GeminiFoodAnalysis> = withContext(Dispatchers.IO) {
         try {
-            val response = generativeModel.generateContent(
+            val response = mealAnalysisModel.generateContent(
                 content {
                     text("Analyze this meal: $description")
                 }
@@ -91,7 +101,6 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
         }
 
         return try {
-            // Clean up the string just in case Gemini ignored the "no markdown" rule
             val cleanJsonString = responseText
                 .replace("```json", "")
                 .replace("```", "")
@@ -115,7 +124,6 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
     override suspend fun getChatResponse(prompt: String, userContext: String): Result<String> {
         return try {
-            // Invisible context injection
             val enrichedPrompt = if (userContext.isNotBlank()) {
                 """
                 [System Note: The user has the following profile stats: $userContext. 
@@ -136,57 +144,69 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
     override suspend fun generateDietPlan(profile: UserProfileEntity): Result<DietPlanResponse> {
         return try {
-            // Construct a strict prompt using the user's profile data
             val prompt = """
-            You are a professional sports nutritionist. Generate a personalized 7-day meal plan for a user with the following profile:
-            - Goal: ${profile.goal}
-            - Activity Level: ${profile.activityLevel}
-            - Diet Type: ${profile.dietType}
-            - Allergies to EXCLUDE: ${profile.allergies.ifBlank { "None" }}
-            - Medical Conditions to consider: ${profile.medicalConditions.ifBlank { "None" }}
-            - Daily Targets: ${profile.dailyCalorieTarget} kcal, ${profile.dailyProteinTarget}g Protein, ${profile.dailyCarbsTarget}g Carbs, ${profile.dailyFatTarget}g Fat.
+                You are a professional sports nutritionist. Generate a personalized 7-day meal plan for a user with the following profile:
+                - Goal: ${profile.goal}
+                - Activity Level: ${profile.activityLevel}
+                - Diet Type: ${profile.dietType}
+                - Allergies to EXCLUDE: ${profile.allergies.ifBlank { "None" }}
+                - Medical Conditions to consider: ${profile.medicalConditions.ifBlank { "None" }}
+                - Daily Targets: ${profile.dailyCalorieTarget} kcal, ${profile.dailyProteinTarget}g Protein, ${profile.dailyCarbsTarget}g Carbs, ${profile.dailyFatTarget}g Fat.
 
-            Requirements:
-            1. Provide exactly 7 days of meals (dayIndex 0 to 6, where 0 is Monday).
-            2. Each day must include realistic, culturally accessible meals categorized by mealType ("Breakfast", "Lunch", "Dinner", "Snack").
-            3. Vary the meals across the 7 days (do not repeat the same meal on consecutive days).
-            4. The total daily macros for each day should closely align with the user's Daily Targets.
-            5. Return ONLY a valid JSON object matching this schema exactly. No markdown, no preamble, no code blocks:
-            {
-              "days": [
+                Requirements:
+                1. Provide exactly 7 days of meals (dayIndex 0 to 6, where 0 is Monday).
+                2. Each day must include realistic, culturally accessible meals categorized by mealType ("Breakfast", "Lunch", "Dinner", "Snack").
+                3. Vary the meals across the 7 days (do not repeat the same meal on consecutive days).
+                4. The total daily macros for each day should closely align with the user's Daily Targets.
+                
+                Output JSON strictly matching this schema:
                 {
-                  "dayIndex": 0,
-                  "meals": [
+                  "days": [
                     {
-                      "mealType": "Breakfast",
-                      "foodName": "Oatmeal with Banana",
-                      "estimatedWeightG": 300.0,
-                      "calories": 350,
-                      "protein": 12.0,
-                      "carbs": 60.0,
-                      "fat": 6.0
+                      "dayIndex": 0,
+                      "meals": [
+                        {
+                          "mealType": "Breakfast",
+                          "foodName": "Oatmeal with Banana",
+                          "estimatedWeightG": 300.0,
+                          "calories": 350,
+                          "protein": 12.0,
+                          "carbs": 60.0,
+                          "fat": 6.0
+                        }
+                      ]
                     }
                   ]
                 }
-              ]
+            """.trimIndent()
+
+            // 1. Call the dedicated Diet Plan model
+            val response = dietPlanModel.generateContent(prompt)
+            val rawText = response.text ?: throw Exception("Empty response from Gemini")
+
+            // 2. Extract JSON strictly
+            val startIndex = rawText.indexOf('{')
+            val endIndex = rawText.lastIndexOf('}')
+
+            val cleanJson = if (startIndex != -1 && endIndex != -1 && startIndex <= endIndex) {
+                rawText.substring(startIndex, endIndex + 1)
+            } else {
+                throw Exception("No valid JSON found in response.")
             }
-        """.trimIndent()
 
-            // Configure the model to return JSON
-            val model = generativeModel // Assuming you have this initialized
-            val response = model.generateContent(prompt)
-
-            val jsonText = response.text?.trim()?.removePrefix("```json")?.removeSuffix("```")?.trim()
-                ?: throw Exception("Empty response from Gemini")
-
-            // Parse JSON using Moshi (or kotlinx.serialization if you are using that instead)
-            val moshi = Moshi.Builder().build()
+            // 3. Parse with Moshi
+            val moshi = Moshi.Builder()
+                .add(KotlinJsonAdapterFactory()) // This teaches Moshi how to read Kotlin data classes!
+                .build()
             val adapter = moshi.adapter(DietPlanResponse::class.java)
-            val planResponse = adapter.fromJson(jsonText)
-                ?: throw Exception("Failed to parse Gemini JSON response")
+            val planResponse = adapter.fromJson(cleanJson)
+                ?: throw Exception("Moshi failed to parse the JSON.")
 
             Result.success(planResponse)
+
         } catch (e: Exception) {
+            // This will print a massive red error in Logcat that is easy to spot
+            android.util.Log.e("METABOLIC_AI_CRASH", "FAILED TO GENERATE PLAN!", e)
             Result.failure(e)
         }
     }

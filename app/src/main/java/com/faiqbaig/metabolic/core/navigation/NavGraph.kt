@@ -28,6 +28,7 @@ import com.faiqbaig.metabolic.feature.profile.ProfileSetupScreen
 import com.faiqbaig.metabolic.feature.dashboard.DashboardScreen
 import com.faiqbaig.metabolic.feature.bmi.BmiScreen
 import com.faiqbaig.metabolic.feature.camera.GeminiScreen
+import com.faiqbaig.metabolic.feature.plans.PlansScreen
 
 // ── NEW: Import your Tracker Screen ──
 import com.faiqbaig.metabolic.feature.tracker.TrackerScreen
@@ -189,8 +190,8 @@ fun MetabolicNavGraph(
         }
 
         // ── Plans ────────────────────────────────────────────
-        composable(Screen.Plans.route) {
-            PlaceholderScreen(name = "Plans")
+        composable(route = Screen.Plans.route) { // Assuming your route object is Screen.Plans
+            PlansScreen()
         }
 
         // ── Chatbot ──────────────────────────────────────────
