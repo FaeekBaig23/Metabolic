@@ -35,6 +35,15 @@ class PreferencesManager @Inject constructor(
         val MEAL_REMINDERS = booleanPreferencesKey("meal_reminders_enabled")
         val HYDRATION_REMINDERS = booleanPreferencesKey("hydration_reminders")
         val WEIGHT_REMINDERS = booleanPreferencesKey("weight_reminders")
+        val PROFILE_IMAGE_URI = stringPreferencesKey("profile_image_uri")
+    }
+
+
+    val profileImageUri: Flow<String?> = context.dataStore.data.map { it[PROFILE_IMAGE_URI] }
+
+    // Add Suspend function
+    suspend fun setProfileImageUri(uri: String) {
+        context.dataStore.edit { it[PROFILE_IMAGE_URI] = uri }
     }
 
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data

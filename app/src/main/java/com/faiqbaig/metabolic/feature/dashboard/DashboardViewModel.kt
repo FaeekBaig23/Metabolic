@@ -21,6 +21,8 @@ import java.util.Calendar
 import javax.inject.Inject
 
 import com.faiqbaig.metabolic.core.utils.PreferencesManager
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -30,6 +32,9 @@ class DashboardViewModel @Inject constructor(
     private val mealLogRepository: MealLogRepository,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
+
+    val profileImageUri: StateFlow<String?> = preferencesManager.profileImageUri
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()

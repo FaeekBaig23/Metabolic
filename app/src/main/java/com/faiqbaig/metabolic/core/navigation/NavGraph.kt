@@ -29,8 +29,8 @@ import com.faiqbaig.metabolic.feature.dashboard.DashboardScreen
 import com.faiqbaig.metabolic.feature.bmi.BmiScreen
 import com.faiqbaig.metabolic.feature.camera.GeminiScreen
 import com.faiqbaig.metabolic.feature.plans.PlansScreen
-
-// ── NEW: Import your Tracker Screen ──
+import com.faiqbaig.metabolic.feature.profile_view.EditProfileScreen
+import com.faiqbaig.metabolic.feature.profile_view.ProfileScreen
 import com.faiqbaig.metabolic.feature.tracker.TrackerScreen
 
 @Composable
@@ -49,7 +49,6 @@ fun MetabolicNavGraph(
             SplashScreen(
                 onNavigate = { route ->
                     navController.navigate(route) {
-                        // Clear the splash screen from the backstack so they can't return to it
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
@@ -75,7 +74,6 @@ fun MetabolicNavGraph(
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                // ── Add this missing callback back in! ──
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route)
                 }
@@ -86,7 +84,6 @@ fun MetabolicNavGraph(
         composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterSuccess = {
-                    // Route to ProfileSetup instead of Dashboard
                     navController.navigate(Screen.ProfileSetup.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
@@ -102,7 +99,6 @@ fun MetabolicNavGraph(
             ProfileSetupScreen(
                 onSetupComplete = {
                     navController.navigate(Screen.Dashboard.route) {
-                        // Clear the backstack so they can't go back to setup
                         popUpTo(Screen.ProfileSetup.route) { inclusive = true }
                     }
                 }
@@ -112,7 +108,6 @@ fun MetabolicNavGraph(
         // ── Dashboard ────────────────────────────────────────
         composable(route = Screen.Dashboard.route) {
             DashboardScreen(
-                // Bottom Navigation Tabs (with state preservation)
                 onNavigateToTracker = {
                     navController.navigate(Screen.Tracker.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
@@ -122,7 +117,6 @@ fun MetabolicNavGraph(
                         restoreState = true
                     }
                 },
-                // ── CHANGED: Chatbot now uses state-saving tab logic ──
                 onNavigateToChatbot = {
                     navController.navigate(Screen.Chatbot.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
@@ -150,24 +144,19 @@ fun MetabolicNavGraph(
                         restoreState = true
                     }
                 },
-
-                // Standard Screens (Cards)
                 onNavigateToMap = { navController.navigate(Screen.Map.route) },
                 onNavigateToBmi = { navController.navigate(Screen.Bmi.route) }
-                // Note: onNavigateToCamera was removed here since it moved to the Tracker
             )
         }
 
         // ── Tracker ──────────────────────────────────────────
         composable(Screen.Tracker.route) {
             TrackerScreen(
-                // ── UPDATED ──
                 onNavigateToGemini = { navController.navigate("gemini_screen") }
             )
         }
 
         // ── Gemini (Formerly Camera) ─────────────────────────
-        // Update this route to match whatever you pass in the navigate call above
         composable("gemini_screen") {
             val trackerViewModel: com.faiqbaig.metabolic.feature.tracker.TrackerViewModel = hiltViewModel()
 
@@ -190,13 +179,12 @@ fun MetabolicNavGraph(
         }
 
         // ── Plans ────────────────────────────────────────────
-        composable(route = Screen.Plans.route) { // Assuming your route object is Screen.Plans
+        composable(route = Screen.Plans.route) {
             PlansScreen()
         }
 
         // ── Chatbot ──────────────────────────────────────────
         composable(Screen.Chatbot.route) {
-            // ── This clears the yellow "never used" warning from ChatbotScreen.kt ──
             com.faiqbaig.metabolic.feature.chatbot.ChatbotScreen()
         }
 
@@ -206,13 +194,29 @@ fun MetabolicNavGraph(
         }
 
         // ── BMI ──────────────────────────────────────────────
-        composable(route = Screen.Bmi.route) { // Or "bmi" depending on your Screen.kt setup
+        composable(route = Screen.Bmi.route) {
             BmiScreen()
         }
 
-        // ── Profile ──────────────────────────────────────────
-        composable(Screen.Profile.route) {
-            PlaceholderScreen(name = "Profile")
+        // ── Profile (FIXED: Single block with both parameters) ──
+        composable(route = Screen.Profile.route) {
+            ProfileScreen(
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToEditProfile = {
+                    navController.navigate("edit_profile")
+                }
+            )
+        }
+
+        // ── Edit Profile ────────────────────────────────────
+        composable(route = "edit_profile") {
+            EditProfileScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

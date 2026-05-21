@@ -11,6 +11,9 @@ data class ProfileUiState(
     val dailyWaterTargetMl: Int = 2500,
     val weightUnit: String = "kg",
     val heightUnit: String = "cm",
+    val profileImageUri: String? = null, // NEW
+    val latestWeightKg: Float? = null,   // NEW (Pulled from weight logs)
+    val latestBmi: Float? = null,
     val mealRemindersEnabled: Boolean = false,
     val hydrationRemindersEnabled: Boolean = false,
     val weightRemindersEnabled: Boolean = false,

@@ -30,6 +30,9 @@ fun DashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Collecting the image URI from the ViewModel
+    val profileImageUri by viewModel.profileImageUri.collectAsState()
+
     val backgroundBrush = remember {
         Brush.radialGradient(
             colors = listOf(
@@ -52,7 +55,6 @@ fun DashboardScreen(
                 onProfileClick = onNavigateToProfile
             )
         },
-        // ── REMOVED: floatingActionButton ──
         containerColor = DarkBackground
     ) { paddingValues ->
 
@@ -74,6 +76,7 @@ fun DashboardScreen(
                         greeting = uiState.greeting,
                         goal = uiState.goal,
                         userName = uiState.userName,
+                        profileImageUri = profileImageUri, // ── THIS LINE IS NOW ADDED ──
                         onProfileClick = onNavigateToProfile
                     )
                     Spacer(modifier = Modifier.height(24.dp))
@@ -120,7 +123,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Section G: BMI Snapshot (Now much larger!)
+                // Section G: BMI Snapshot
                 item {
                     BmiSnapshotCard(
                         bmi = uiState.bmi,
@@ -150,7 +153,7 @@ private fun MetabolicBottomNav(
     currentRoute: String,
     onHomeClick: () -> Unit,
     onTrackerClick: () -> Unit,
-    onChatClick: () -> Unit, // ── changed from Camera to Chatbot ──
+    onChatClick: () -> Unit,
     onPlansClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
@@ -172,11 +175,10 @@ private fun MetabolicBottomNav(
             label = { Text("Tracker", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
         )
-        // ── CHANGED: Replaced Camera with Chatbot ──
         NavigationBarItem(
             selected = currentRoute == "chatbot",
             onClick = onChatClick,
-            icon = { Text("✨", fontSize = 20.sp) }, // Or 🤖
+            icon = { Text("✨", fontSize = 20.sp) },
             label = { Text("Chat", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
         )
