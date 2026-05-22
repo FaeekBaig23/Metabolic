@@ -39,14 +39,13 @@ class DashboardViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    // ── NEW: Get today's date to query the database ──
     private val todayDateString: String
         get() = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
     init {
         observeUserProfile()
-        observeDailyTotals() // Listen to meals
-        observeLatestWeightLog() // ── NEW: Listen to weight logs immediately ──
+        observeDailyTotals()
+        observeLatestWeightLog()
         observeWaterIntake()
     }
 
@@ -61,9 +60,10 @@ class DashboardViewModel @Inject constructor(
             .onEach { profile ->
                 if (profile != null) {
                     _uiState.update { state ->
-                        // Only set BMI from profile if it hasn't been overridden by a newer weight log yet
-                        // (The separate observer handles updates, but this gives an initial value if no logs exist)
+                        // Initial values: use profile data unless overridden by a newer weight log
                         val currentBmi = if (state.bmi == 0.0) profile.bmi.toDouble() else state.bmi
+                        val currentWeight = if (state.weightKg == 0.0) profile.weightKg.toDouble() else state.weightKg
+                        val currentHeight = if (state.heightCm == 0.0) profile.heightCm.toDouble() else state.heightCm
 
                         state.copy(
                             userName = profile.name,
@@ -74,6 +74,8 @@ class DashboardViewModel @Inject constructor(
                             carbsTarget = profile.dailyCarbsTarget,
                             fatTarget = profile.dailyFatTarget,
                             bmi = currentBmi,
+                            weightKg = currentWeight, // ── UPDATED ──
+                            heightCm = currentHeight, // ── UPDATED ──
                             isLoading = false
                         )
                     }
@@ -87,7 +89,6 @@ class DashboardViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    // ── NEW: Listen to Room database for the latest weight/BMI update ──
     private fun observeLatestWeightLog() {
         val userId = auth.currentUser?.uid ?: return
 
@@ -96,7 +97,8 @@ class DashboardViewModel @Inject constructor(
                 if (latestLog != null) {
                     _uiState.update { currentState ->
                         currentState.copy(
-                            bmi = latestLog.bmi
+                            bmi = latestLog.bmi,
+                            weightKg = latestLog.weightKg // ── UPDATED ──
                         )
                     }
                 }
@@ -104,7 +106,6 @@ class DashboardViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    // Listen to Room database for meal updates
     private fun observeDailyTotals() {
         val userId = auth.currentUser?.uid ?: return
 
@@ -137,8 +138,6 @@ class DashboardViewModel @Inject constructor(
 
     fun addWater(amountMl: Int) {
         viewModelScope.launch {
-            // Write directly to DataStore.
-            // The observeWaterIntake() flow will automatically catch the change and update the UI!
             preferencesManager.addWater(amountMl)
         }
     }

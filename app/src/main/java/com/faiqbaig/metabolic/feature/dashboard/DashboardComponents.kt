@@ -452,10 +452,16 @@ fun WaterTrackerCard(
     }
 }
 
-// ── Section G: BMI Snapshot Card ──
+// Section G: BMI Snapshot Card (Expanded with Weight/Height)
 
 @Composable
-fun BmiSnapshotCard(bmi: Double, onTrackWeightClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BmiSnapshotCard(
+    bmi: Double,
+    weightKg: Double, // ── ADDED ──
+    heightCm: Double, // ── ADDED ──
+    onTrackWeightClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val (categoryText, categoryColor) = when {
         bmi == 0.0 -> "No data" to DarkSurfaceVariant
         bmi < 18.5 -> "Underweight" to MetabolicCyan
@@ -465,33 +471,70 @@ fun BmiSnapshotCard(bmi: Double, onTrackWeightClick: () -> Unit, modifier: Modif
     }
 
     val formattedBmi = if (bmi > 0) String.format(Locale.US, "%.1f", bmi) else "--"
+    val formattedWeight = if (weightKg > 0) String.format(Locale.US, "%.1f", weightKg) else "--"
+    val formattedHeight = if (heightCm > 0) String.format(Locale.US, "%.1f", heightCm) else "--"
+
     val targetAngle = if (bmi > 0) {
         val fraction = ((bmi - 15.0) / 20.0).coerceIn(0.0, 1.0).toFloat()
         180f + (fraction * 180f)
-    } else 180f
+    } else {
+        180f
+    }
 
     val animatedAngle = remember { Animatable(180f) }
     LaunchedEffect(bmi) {
-        animatedAngle.animateTo(targetValue = targetAngle, animationSpec = tween(durationMillis = 1200, easing = EaseOutCubic))
+        animatedAngle.animateTo(
+            targetValue = targetAngle,
+            animationSpec = tween(durationMillis = 1200, easing = EaseOutCubic)
+        )
     }
 
     Surface(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(24.dp), color = DarkSurface, border = BorderStroke(1.dp, DarkBorder)
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = DarkSurface,
+        border = BorderStroke(1.dp, DarkBorder)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp, horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp, horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "⚖️ Body Mass Index", color = DarkTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Update →", color = DarkTextSecondary, fontSize = 13.sp, modifier = Modifier.clickable { onTrackWeightClick() })
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "⚖️ Body Mass Index",
+                    color = DarkTextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Update →",
+                    color = DarkTextSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.clickable { onTrackWeightClick() }
+                )
             }
+
             Spacer(modifier = Modifier.height(32.dp))
-            Box(modifier = Modifier.width(220.dp).height(110.dp), contentAlignment = Alignment.BottomCenter) {
+
+            // The Semicircle Gauge
+            Box(
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(110.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val strokeWidthPx = 16.dp.toPx()
                     val arcSize = Size(size.width, size.width)
+
                     drawArc(color = MetabolicCyan, startAngle = 180f, sweepAngle = 31.5f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
                     drawArc(color = MetabolicGreen, startAngle = 211.5f, sweepAngle = 58.5f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
                     drawArc(color = SemanticWarning, startAngle = 270f, sweepAngle = 45f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
@@ -502,45 +545,71 @@ fun BmiSnapshotCard(bmi: Double, onTrackWeightClick: () -> Unit, modifier: Modif
 
                     if (bmi > 0) {
                         rotate(degrees = animatedAngle.value, pivot = pivotCenter) {
-                            drawLine(color = Color.White, start = pivotCenter, end = Offset(pivotCenter.x + needleLength, pivotCenter.y), strokeWidth = 8f, cap = StrokeCap.Round)
+                            drawLine(
+                                color = Color.White,
+                                start = pivotCenter,
+                                end = Offset(pivotCenter.x + needleLength, pivotCenter.y),
+                                strokeWidth = 8f,
+                                cap = StrokeCap.Round
+                            )
                         }
                         drawCircle(color = Color.White, radius = 18f, center = pivotCenter)
                         drawCircle(color = DarkSurface, radius = 8f, center = pivotCenter)
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = formattedBmi, color = DarkTextPrimary, fontSize = 44.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = categoryText, color = categoryColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
 
-// ── SECTION H: AI Chatbot Promo Card ──
-@Composable
-fun AiPromoCard(onChatClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable { onChatClick() },
-        shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, MetabolicGreen.copy(alpha = 0.3f)), color = Color.Transparent
-    ) {
-        Box(modifier = Modifier.fillMaxWidth().background(Brush.horizontalGradient(colors = listOf(MetabolicGreen.copy(alpha = 0.15f), MetabolicCyan.copy(alpha = 0.15f)))).padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "✨", fontSize = 20.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Ask your AI coach", color = DarkTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = formattedBmi,
+                color = DarkTextPrimary,
+                fontSize = 44.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = categoryText,
+                color = categoryColor,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // ── NEW: Weight and Height Row ──
+            Surface(
+                color = DarkSurfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "Current Weight", color = DarkTextSecondary, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "$formattedWeight kg", color = DarkTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Get personalized diet and workout advice", color = DarkTextSecondary, fontSize = 13.sp)
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Surface(shape = RoundedCornerShape(50), color = Color.Transparent, border = BorderStroke(1.dp, DarkTextPrimary.copy(alpha = 0.5f))) {
-                    Text(text = "Chat now", color = DarkTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+
+                    // Vertical Divider
+                    Box(modifier = Modifier.width(1.dp).height(30.dp).background(DarkBorder))
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "Height", color = DarkTextSecondary, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "$formattedHeight cm", color = DarkTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
     }
 }
+
+
 

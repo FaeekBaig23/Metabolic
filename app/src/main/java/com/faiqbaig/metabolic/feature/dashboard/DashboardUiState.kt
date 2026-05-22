@@ -23,6 +23,8 @@ data class DashboardUiState(
 
     // ── Metrics & Extras ──
     val bmi: Double = 0.0,
+    val weightKg: Double = 0.0, // ── ADDED ──
+    val heightCm: Double = 0.0, // ── ADDED ──
     val streak: Int = 0,
 
     // ── Water Intake ──

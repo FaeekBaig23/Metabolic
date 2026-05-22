@@ -24,7 +24,7 @@ fun DashboardScreen(
     onNavigateToTracker: () -> Unit,
     onNavigateToPlans: () -> Unit,
     onNavigateToChatbot: () -> Unit,
-    onNavigateToBmi: () -> Unit, // ── Removed onNavigateToMap ──
+    onNavigateToBmi: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -120,19 +120,15 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Section G: BMI Snapshot
+                // Section G: BMI Snapshot (Expanded)
                 item {
                     BmiSnapshotCard(
                         bmi = uiState.bmi,
+                        weightKg = uiState.weightKg, // Make sure your DashboardUiState exposes this!
+                        heightCm = uiState.heightCm, // Make sure your DashboardUiState exposes this!
                         onTrackWeightClick = onNavigateToBmi
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                // Section H: AI Chatbot Promo
-                item {
-                    AiPromoCard(onChatClick = onNavigateToChatbot)
-                    Spacer(modifier = Modifier.height(40.dp)) // ── Added bottom padding here ──
+                    Spacer(modifier = Modifier.height(40.dp)) // The padding closes out the screen cleanly
                 }
             }
         }
