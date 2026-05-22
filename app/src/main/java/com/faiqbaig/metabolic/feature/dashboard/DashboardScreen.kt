@@ -24,13 +24,10 @@ fun DashboardScreen(
     onNavigateToTracker: () -> Unit,
     onNavigateToPlans: () -> Unit,
     onNavigateToChatbot: () -> Unit,
-    onNavigateToMap: () -> Unit,
-    onNavigateToBmi: () -> Unit,
+    onNavigateToBmi: () -> Unit, // ── Removed onNavigateToMap ──
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // Collecting the image URI from the ViewModel
     val profileImageUri by viewModel.profileImageUri.collectAsState()
 
     val backgroundBrush = remember {
@@ -50,7 +47,7 @@ fun DashboardScreen(
                 currentRoute = "dashboard",
                 onHomeClick = { },
                 onTrackerClick = onNavigateToTracker,
-                onChatClick = onNavigateToChatbot, // ── changed from Camera to Chatbot ──
+                onChatClick = onNavigateToChatbot,
                 onPlansClick = onNavigateToPlans,
                 onProfileClick = onNavigateToProfile
             )
@@ -76,7 +73,7 @@ fun DashboardScreen(
                         greeting = uiState.greeting,
                         goal = uiState.goal,
                         userName = uiState.userName,
-                        profileImageUri = profileImageUri, // ── THIS LINE IS NOW ADDED ──
+                        profileImageUri = profileImageUri,
                         onProfileClick = onNavigateToProfile
                     )
                     Spacer(modifier = Modifier.height(24.dp))
@@ -135,13 +132,7 @@ fun DashboardScreen(
                 // Section H: AI Chatbot Promo
                 item {
                     AiPromoCard(onChatClick = onNavigateToChatbot)
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                // Section I: Gym Teaser
-                item {
-                    GymTeaserCard(onExploreClick = onNavigateToMap)
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(40.dp)) // ── Added bottom padding here ──
                 }
             }
         }

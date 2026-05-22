@@ -144,7 +144,6 @@ fun MetabolicNavGraph(
                         restoreState = true
                     }
                 },
-                onNavigateToMap = { navController.navigate(Screen.Map.route) },
                 onNavigateToBmi = { navController.navigate(Screen.Bmi.route) }
             )
         }
@@ -186,11 +185,6 @@ fun MetabolicNavGraph(
         // ── Chatbot ──────────────────────────────────────────
         composable(Screen.Chatbot.route) {
             com.faiqbaig.metabolic.feature.chatbot.ChatbotScreen()
-        }
-
-        // ── Map ──────────────────────────────────────────────
-        composable(Screen.Map.route) {
-            PlaceholderScreen(name = "Map")
         }
 
         // ── BMI ──────────────────────────────────────────────

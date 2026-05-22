@@ -544,26 +544,3 @@ fun AiPromoCard(onChatClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-// ── SECTION I: Gym Map Teaser Card ──
-@Composable
-fun GymTeaserCard(onExploreClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp), color = DarkSurface, border = BorderStroke(1.dp, DarkBorder)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text(text = "🗺️ Gyms Near You", color = DarkTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(text = "Find fitness centers in your area", color = DarkTextSecondary, fontSize = 13.sp)
-                }
-                Text(text = "Explore →", color = MetabolicGreen, fontSize = 13.sp, modifier = Modifier.clickable { onExploreClick() })
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(12.dp)).background(DarkSurfaceVariant).clickable { onExploreClick() }, contentAlignment = Alignment.Center) {
-                Text(text = "📍", fontSize = 32.sp)
-            }
-        }
-    }
-}

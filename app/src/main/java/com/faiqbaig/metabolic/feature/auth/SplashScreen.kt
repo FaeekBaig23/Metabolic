@@ -103,7 +103,7 @@ fun SplashScreen(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text     = "v1.0.0",
+                text     = "v1.6.5",
                 fontSize = 12.sp,
                 color    = Color.White.copy(alpha = 0.3f)
             )
