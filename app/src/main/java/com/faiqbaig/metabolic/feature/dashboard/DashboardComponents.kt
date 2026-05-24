@@ -47,6 +47,22 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 
+// ── Icon Imports ──
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Fastfood
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.MonitorWeight
+import androidx.compose.material.icons.rounded.NightsStay
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.ThumbUp
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
+
 // ── Theme Imports ──
 import com.faiqbaig.metabolic.core.ui.theme.DarkTextPrimary
 import com.faiqbaig.metabolic.core.ui.theme.DarkTextSecondary
@@ -96,13 +112,24 @@ fun DashboardHeader(
                 color = MetabolicGreen.copy(alpha = 0.15f),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(
-                    text = "🎯 $goal",
-                    color = MetabolicGreen,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Flag,
+                        contentDescription = "Goal",
+                        tint = MetabolicGreen,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = goal,
+                        color = MetabolicGreen,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
 
@@ -210,18 +237,26 @@ fun CalorieRingCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatColumn("🔥", "Burned", "0 kcal")
-                StatColumn("🍽️", "Remaining", "${numberFormat.format(caloriesRemaining)} kcal")
-                StatColumn("🎯", "Target", "${numberFormat.format(dailyCalorieTarget)} kcal")
+                StatColumn(Icons.Rounded.Restaurant, "Remaining", "${numberFormat.format(caloriesRemaining)} kcal")
+                StatColumn(Icons.Rounded.Flag, "Target", "${numberFormat.format(dailyCalorieTarget)} kcal")
             }
         }
     }
 }
 
 @Composable
-private fun StatColumn(icon: String, label: String, value: String) {
+private fun StatColumn(icon: ImageVector, label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "$icon $value", color = DarkTextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = DarkTextSecondary,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(text = value, color = DarkTextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = label, color = DarkTextSecondary, fontSize = 11.sp)
     }
@@ -334,13 +369,13 @@ fun TodaysMealsSection(
     val hasSnack = "snack" in loggedTypes
 
     val (icon, message) = when {
-        meals.isEmpty() -> "🍽️" to "No meals logged yet.\nLet's get started!"
-        hasBreakfast && hasLunch && hasDinner && hasSnack -> "🏆" to "All meals logged for the day.\nGreat job!"
-        hasBreakfast && hasLunch && hasDinner -> "🍎" to "Main meals logged.\nDon't forget to log your snacks!"
-        hasBreakfast && hasLunch -> "🌙" to "Breakfast and lunch logged.\nYou have not logged your dinner yet."
-        hasBreakfast -> "☀️" to "Breakfast logged.\nDon't forget to log your lunch!"
-        hasLunch -> "⚠️" to "Lunch logged, but you missed breakfast!"
-        else -> "👍" to "You've logged ${meals.size} items today.\nKeep it up!"
+        meals.isEmpty() -> Icons.Rounded.Restaurant to "No meals logged yet.\nLet's get started!"
+        hasBreakfast && hasLunch && hasDinner && hasSnack -> Icons.Rounded.EmojiEvents to "All meals logged for the day.\nGreat job!"
+        hasBreakfast && hasLunch && hasDinner -> Icons.Rounded.Fastfood to "Main meals logged.\nDon't forget to log your snacks!"
+        hasBreakfast && hasLunch -> Icons.Rounded.NightsStay to "Breakfast and lunch logged.\nYou have not logged your dinner yet."
+        hasBreakfast -> Icons.Rounded.WbSunny to "Breakfast logged.\nDon't forget to log your lunch!"
+        hasLunch -> Icons.Rounded.Warning to "Lunch logged, but you missed breakfast!"
+        else -> Icons.Rounded.ThumbUp to "You've logged ${meals.size} items today.\nKeep it up!"
     }
 
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -365,21 +400,44 @@ fun TodaysMealsSection(
                 modifier = Modifier.fillMaxWidth().padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = icon, fontSize = 36.sp)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MetabolicGreen,
+                    modifier = Modifier.size(48.dp)
+                )
+
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
                     text = message, color = DarkTextPrimary, fontSize = 15.sp,
                     fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 22.sp
                 )
+
                 Spacer(modifier = Modifier.height(20.dp))
+
                 Surface(
                     modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onLogMealClick() },
                     color = MetabolicGreen
                 ) {
-                    Text(
-                        text = "➕ Log a meal", color = Color.Black, fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = "Log",
+                            tint = Color.Black,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Log a meal",
+                            color = Color.Black,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
@@ -407,7 +465,17 @@ fun WaterTrackerCard(
         shape = RoundedCornerShape(24.dp), color = DarkSurface, border = BorderStroke(1.dp, DarkBorder)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(text = "💧 Hydration", color = DarkTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.WaterDrop,
+                    contentDescription = null,
+                    tint = MetabolicCyan,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Hydration", color = DarkTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
@@ -441,7 +509,18 @@ fun WaterTrackerCard(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MetabolicCyan),
                         shape = RoundedCornerShape(12.dp)
-                    ) { Text(text = "➕ Add ${selectedVolume}ml", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = null,
+                                tint = Color.Black,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Add ${selectedVolume}ml", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -457,8 +536,8 @@ fun WaterTrackerCard(
 @Composable
 fun BmiSnapshotCard(
     bmi: Double,
-    weightKg: Double, // ── ADDED ──
-    heightCm: Double, // ── ADDED ──
+    weightKg: Double,
+    heightCm: Double,
     onTrackWeightClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -508,12 +587,22 @@ fun BmiSnapshotCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "⚖️ Body Mass Index",
-                    color = DarkTextPrimary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.MonitorWeight,
+                        contentDescription = null,
+                        tint = MetabolicGreen,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Body Mass Index",
+                        color = DarkTextPrimary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 Text(
                     text = "Update →",
                     color = DarkTextSecondary,
@@ -579,7 +668,6 @@ fun BmiSnapshotCard(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // ── NEW: Weight and Height Row ──
             Surface(
                 color = DarkSurfaceVariant.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(16.dp)
@@ -597,7 +685,6 @@ fun BmiSnapshotCard(
                         Text(text = "$formattedWeight kg", color = DarkTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    // Vertical Divider
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(DarkBorder))
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -610,6 +697,3 @@ fun BmiSnapshotCard(
         }
     }
 }
-
-
-

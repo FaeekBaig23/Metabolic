@@ -215,7 +215,7 @@ fun GeminiScreen(
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Analyzing with Gemini...")
+                        Text("Analyzing...")
                     } else {
                         Text("Analyze Meal", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }

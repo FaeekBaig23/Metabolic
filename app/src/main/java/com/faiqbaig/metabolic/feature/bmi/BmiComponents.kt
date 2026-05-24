@@ -22,13 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.faiqbaig.metabolic.core.data.local.WeightLogEntity
-import kotlin.math.cos
-import kotlin.math.sin
 
 // Design System Colors from Handoff
 val MetabolicGreen = Color(0xFF00C896)
@@ -61,42 +60,30 @@ fun BmiDialCard(bmi: Double, category: String, weight: Double, height: Double) {
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── NEW: Row to place gauge and text side-by-side ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Speedometer Canvas (Slightly smaller to fit the text column)
                 Box(
                     modifier = Modifier.size(160.dp, 80.dp),
                     contentAlignment = Alignment.BottomCenter
                 ) {
                     Canvas(modifier = Modifier.matchParentSize()) {
-                        val arcBrush = Brush.sweepGradient(
-                            0.0f to MetabolicCyan,
-                            0.3f to MetabolicGreen,
-                            0.6f to SemanticWarning,
-                            1.0f to SemanticError
-                        )
+                        val strokeWidthPx = 40f
+                        val arcSize = Size(size.width, size.width) // Make it a full circle size for drawArc
 
-                        drawArc(
-                            brush = arcBrush,
-                            startAngle = 180f,
-                            sweepAngle = 180f,
-                            useCenter = false,
-                            style = Stroke(width = 40f, cap = StrokeCap.Round),
-                            size = Size(size.width, size.height * 2)
-                        )
+                        // ── CHANGED: Dashboard-synced segmented arcs ──
+                        drawArc(color = MetabolicCyan, startAngle = 180f, sweepAngle = 31.5f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
+                        drawArc(color = MetabolicGreen, startAngle = 211.5f, sweepAngle = 58.5f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
+                        drawArc(color = SemanticWarning, startAngle = 270f, sweepAngle = 45f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
+                        drawArc(color = SemanticError, startAngle = 315f, sweepAngle = 45f, useCenter = false, size = arcSize, style = Stroke(width = strokeWidthPx, cap = StrokeCap.Butt))
 
-                        val minBmi = 15f
-                        val maxBmi = 35f
-                        val clampedBmi = bmi.toFloat().coerceIn(minBmi, maxBmi)
-                        val progress = (clampedBmi - minBmi) / (maxBmi - minBmi)
-                        val angleDegrees = 180f + (progress * 180f)
+                        val fraction = ((bmi - 15.0) / 20.0).coerceIn(0.0, 1.0).toFloat()
+                        val angleDegrees = 180f + (fraction * 180f)
                         val angleRadians = Math.toRadians(angleDegrees.toDouble())
 
-                        val needleLength = size.width / 2 - 20f
+                        val needleLength = size.width / 2 - 10f
                         val centerX = size.width / 2
                         val centerY = size.height
 
@@ -120,7 +107,6 @@ fun BmiDialCard(bmi: Double, category: String, weight: Double, height: Double) {
 
                 Spacer(modifier = Modifier.width(32.dp))
 
-                // ── NEW: Right side stats column ──
                 Column(horizontalAlignment = Alignment.Start) {
                     Text("Weight", color = MetabolicGreen, fontSize = 14.sp)
                     Text(
@@ -239,7 +225,7 @@ fun HistoryFilterToggle(
             .padding(4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        HistoryFilter.entries.forEach { filter ->
+        HistoryFilter.values().forEach { filter ->
             val isSelected = filter == currentFilter
             Box(
                 modifier = Modifier
@@ -290,42 +276,119 @@ fun WeightHistoryChart(dataPoints: List<Pair<String, Double>>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(250.dp)
             .background(DarkSurface, RoundedCornerShape(16.dp))
-            .padding(24.dp)
+            .padding(top = 32.dp, bottom = 32.dp, start = 40.dp, end = 16.dp)
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
-            val minWeight = dataPoints.minOf { it.second } - 2.0
-            val maxWeight = dataPoints.maxOf { it.second } + 2.0
-            val weightRange = (maxWeight - minWeight).toFloat()
+            val width = size.width
+            val height = size.height
 
-            val path = Path()
-            val stepX = size.width / (dataPoints.size - 1).coerceAtLeast(1).toFloat()
+            if (width <= 0f || height <= 0f) return@Canvas
 
-            dataPoints.forEachIndexed { index, point ->
-                val x = index * stepX
-                val normalizedY = 1f - ((point.second.toFloat() - minWeight.toFloat()) / weightRange)
-                val y = normalizedY * size.height
+            // ── REVERTED: Original 4-Segment Dynamic Scaling (+2/-2 Padding) ──
+            val maxWeight = dataPoints.maxOf { it.second }.toFloat() + 2f
+            val minWeight = dataPoints.minOf { it.second }.toFloat() - 2f
+            val weightRange = (maxWeight - minWeight).coerceAtLeast(1f) // Prevent division by zero
 
-                if (index == 0) {
-                    path.moveTo(x, y)
-                } else {
-                    path.lineTo(x, y)
-                }
+            val textPaint = android.graphics.Paint().apply {
+                color = android.graphics.Color.parseColor("#8FBFB0")
+                textSize = 30f
+                isAntiAlias = true
+            }
 
-                // Draw data point circles
-                drawCircle(
-                    color = MetabolicCyan,
-                    radius = 8f,
-                    center = Offset(x, y)
+            // Draw Y-Axis Gridlines & Labels
+            val stepY = height / 4
+            for (i in 0..4) {
+                val y = height - (i * stepY)
+                val value = minWeight + (weightRange * (i / 4f))
+
+                drawLine(
+                    color = DarkSurfaceVariant,
+                    start = Offset(0f, y),
+                    end = Offset(width, y),
+                    strokeWidth = 2f
+                )
+
+                textPaint.textAlign = android.graphics.Paint.Align.RIGHT
+                drawContext.canvas.nativeCanvas.drawText(
+                    String.format(java.util.Locale.US, "%.1f", value),
+                    -10f,
+                    y + 10f,
+                    textPaint
                 )
             }
 
-            drawPath(
-                path = path,
-                color = MetabolicGreen,
-                style = Stroke(width = 4f, cap = StrokeCap.Round)
-            )
+            if (dataPoints.size > 1) {
+                val stepX = width / (dataPoints.size - 1).toFloat()
+                val linePath = Path()
+                val fillPath = Path()
+                val points = mutableListOf<Offset>()
+
+                dataPoints.forEachIndexed { index, point ->
+                    val x = index * stepX
+                    val y = height - ((point.second.toFloat() - minWeight) / weightRange) * height
+                    val safeY = y.coerceIn(0f, height)
+
+                    points.add(Offset(x, safeY))
+
+                    if (index == 0) {
+                        linePath.moveTo(x, safeY)
+                        fillPath.moveTo(x, height)
+                        fillPath.lineTo(x, safeY)
+                    } else {
+                        linePath.lineTo(x, safeY)
+                        fillPath.lineTo(x, safeY)
+                    }
+
+                    if (index == 0 || index == dataPoints.size - 1 || dataPoints.size <= 5) {
+                        textPaint.textAlign = android.graphics.Paint.Align.CENTER
+                        drawContext.canvas.nativeCanvas.drawText(
+                            point.first,
+                            x,
+                            height + 40f,
+                            textPaint
+                        )
+                    }
+                }
+
+                fillPath.lineTo(points.last().x, height)
+                fillPath.close()
+
+                drawPath(
+                    path = fillPath,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(MetabolicGreen.copy(alpha = 0.3f), Color.Transparent),
+                        startY = 0f,
+                        endY = height.coerceAtLeast(1f)
+                    )
+                )
+
+                drawPath(
+                    path = linePath,
+                    color = MetabolicGreen,
+                    style = Stroke(width = 4f, cap = StrokeCap.Round)
+                )
+
+                points.forEach { pointOffset ->
+                    drawCircle(color = DarkSurface, radius = 10f, center = pointOffset)
+                    drawCircle(color = MetabolicGreen, radius = 6f, center = pointOffset)
+                }
+            } else if (dataPoints.size == 1) {
+                val point = dataPoints.first()
+                val y = height - ((point.second.toFloat() - minWeight) / weightRange) * height
+                val safeY = y.coerceIn(0f, height)
+
+                drawCircle(color = MetabolicGreen, radius = 8f, center = Offset(width / 2, safeY))
+
+                textPaint.textAlign = android.graphics.Paint.Align.CENTER
+                drawContext.canvas.nativeCanvas.drawText(
+                    point.first,
+                    width / 2,
+                    height + 40f,
+                    textPaint
+                )
+            }
         }
     }
 }
