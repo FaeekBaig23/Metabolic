@@ -3,7 +3,15 @@ package com.faiqbaig.metabolic.feature.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -16,6 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import com.faiqbaig.metabolic.core.ui.theme.DarkBackground
 import com.faiqbaig.metabolic.core.ui.theme.DarkSurface
+import com.faiqbaig.metabolic.core.ui.theme.DarkSurfaceVariant
+import com.faiqbaig.metabolic.core.ui.theme.DarkTextSecondary
 import com.faiqbaig.metabolic.core.ui.theme.MetabolicGreen
 
 @Composable
@@ -56,7 +66,7 @@ fun DashboardScreen(
     ) { paddingValues ->
 
         if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = MetabolicGreen)
             }
         } else {
@@ -124,11 +134,11 @@ fun DashboardScreen(
                 item {
                     BmiSnapshotCard(
                         bmi = uiState.bmi,
-                        weightKg = uiState.weightKg, // Make sure your DashboardUiState exposes this!
-                        heightCm = uiState.heightCm, // Make sure your DashboardUiState exposes this!
+                        weightKg = uiState.weightKg,
+                        heightCm = uiState.heightCm,
                         onTrackWeightClick = onNavigateToBmi
                     )
-                    Spacer(modifier = Modifier.height(40.dp)) // The padding closes out the screen cleanly
+                    Spacer(modifier = Modifier.height(40.dp))
                 }
             }
         }
@@ -145,43 +155,52 @@ private fun MetabolicBottomNav(
     onProfileClick: () -> Unit
 ) {
     NavigationBar(
-        containerColor = DarkSurface,
-        tonalElevation = 0.dp
+        // ── CHANGED: Using DarkSurfaceVariant for a lighter contrast against the background ──
+        containerColor = DarkSurfaceVariant,
+        tonalElevation = 8.dp
     ) {
+        val selectedColors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MetabolicGreen,
+            unselectedIconColor = DarkTextSecondary,
+            selectedTextColor = MetabolicGreen,
+            unselectedTextColor = DarkTextSecondary,
+            indicatorColor = MetabolicGreen.copy(alpha = 0.15f)
+        )
+
         NavigationBarItem(
             selected = currentRoute == "dashboard",
             onClick = onHomeClick,
-            icon = { Text("🏠", fontSize = 20.sp) },
-            label = { Text("Home", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
+            icon = { Icon(Icons.Rounded.Home, contentDescription = "Home", modifier = Modifier.size(24.dp)) },
+            label = { Text("Home", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
+            colors = selectedColors
         )
         NavigationBarItem(
             selected = currentRoute == "tracker",
             onClick = onTrackerClick,
-            icon = { Text("🍽️", fontSize = 20.sp) },
-            label = { Text("Tracker", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
+            icon = { Icon(Icons.Rounded.Restaurant, contentDescription = "Tracker", modifier = Modifier.size(24.dp)) },
+            label = { Text("Tracker", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
+            colors = selectedColors
         )
         NavigationBarItem(
             selected = currentRoute == "chatbot",
             onClick = onChatClick,
-            icon = { Text("✨", fontSize = 20.sp) },
-            label = { Text("Chat", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
+            icon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = "Chat", modifier = Modifier.size(24.dp)) },
+            label = { Text("Chat", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
+            colors = selectedColors
         )
         NavigationBarItem(
             selected = currentRoute == "plans",
             onClick = onPlansClick,
-            icon = { Text("📅", fontSize = 20.sp) },
-            label = { Text("Plans", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
+            icon = { Icon(Icons.Rounded.DateRange, contentDescription = "Plans", modifier = Modifier.size(24.dp)) },
+            label = { Text("Plans", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
+            colors = selectedColors
         )
         NavigationBarItem(
             selected = currentRoute == "profile",
             onClick = onProfileClick,
-            icon = { Text("👤", fontSize = 20.sp) },
-            label = { Text("Profile", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = MetabolicGreen.copy(alpha = 0.2f))
+            icon = { Icon(Icons.Rounded.Person, contentDescription = "Profile", modifier = Modifier.size(24.dp)) },
+            label = { Text("Profile", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
+            colors = selectedColors
         )
     }
 }

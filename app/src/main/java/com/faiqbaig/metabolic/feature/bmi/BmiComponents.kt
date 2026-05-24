@@ -52,7 +52,7 @@ fun BmiDialCard(bmi: Double, category: String, weight: Double, height: Double) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "⚖️ Current BMI",
+                text = "Current BMI",
                 color = DarkTextPrimary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
