@@ -133,7 +133,7 @@ class DashboardViewModel @Inject constructor(
         }
 
         val firstName = name.substringBefore(" ")
-        return "$timeOfDay, $firstName 👋"
+        return "$timeOfDay, $firstName"
     }
 
     fun addWater(amountMl: Int) {

@@ -178,7 +178,7 @@ private fun MetabolicBottomNav(
             selected = currentRoute == "tracker",
             onClick = onTrackerClick,
             icon = { Icon(Icons.Rounded.Restaurant, contentDescription = "Tracker", modifier = Modifier.size(24.dp)) },
-            label = { Text("Tracker", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
+            label = { Text("Meals", fontSize = 10.sp, fontWeight = FontWeight.Medium) },
             colors = selectedColors
         )
         NavigationBarItem(
