@@ -1,25 +1,22 @@
 package com.faiqbaig.metabolic.core.data.remote
 
-import com.squareup.moshi.JsonClass
+// ── Moshi imports completely removed ──
 
-@JsonClass(generateAdapter = true)
 data class DietPlanResponse(
-    val days: List<DietPlanDay>
+    val days: List<DietPlanDay> = emptyList()
 )
 
-@JsonClass(generateAdapter = true)
 data class DietPlanDay(
-    val dayIndex: Int,
-    val meals: List<DietPlanMeal>
+    val dayIndex: Int = 0,
+    val meals: List<DietPlanMeal> = emptyList()
 )
 
-@JsonClass(generateAdapter = true)
 data class DietPlanMeal(
-    val mealType: String,
-    val foodName: String,
-    val estimatedWeightG: Double,
-    val calories: Int,
-    val protein: Double,
-    val carbs: Double,
-    val fat: Double
+    val mealType: String = "",
+    val foodName: String = "",
+    val estimatedWeightG: Double = 0.0,
+    val calories: Int = 0,
+    val protein: Double = 0.0,
+    val carbs: Double = 0.0,
+    val fat: Double = 0.0
 )

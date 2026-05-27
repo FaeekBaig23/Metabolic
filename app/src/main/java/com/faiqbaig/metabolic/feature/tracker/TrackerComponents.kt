@@ -1,13 +1,8 @@
 package com.faiqbaig.metabolic.feature.tracker
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,8 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.faiqbaig.metabolic.core.data.local.MealLogEntity
-import com.faiqbaig.metabolic.core.data.remote.UsdaFood
-import androidx.compose.material.icons.filled.CameraAlt
 
 @Composable
 fun DailySummaryBar(
@@ -49,83 +42,6 @@ private fun SummaryItem(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = label, style = MaterialTheme.typography.labelMedium)
         Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun FoodSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClearClick: () -> Unit,
-    onCameraClick: () -> Unit, // ── NEW ──
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        placeholder = { Text("Search for a food...") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-        trailingIcon = {
-            Row {
-                // Show clear button if there's text
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = onClearClick) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear")
-                    }
-                }
-                // Always show the Camera button
-                IconButton(onClick = onCameraClick) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Scan Meal",
-                        // Make sure you import your MetabolicGreen or use MaterialTheme colors
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        },
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        singleLine = true
-    )
-}
-
-@Composable
-fun SearchResultItem(
-    food: UsdaFood,
-    onAddClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // The USDA API stores nutrients by ID. 1008 = Calories.
-    val calories = food.foodNutrients.find { it.nutrientId == 1008 }?.value?.toInt() ?: 0
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onAddClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = food.description, style = MaterialTheme.typography.titleMedium)
-                if (food.brandOwner != null) {
-                    Text(text = food.brandOwner, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            Text(
-                text = "$calories kcal",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Icon(Icons.Default.Add, contentDescription = "Add Food")
-        }
     }
 }
 

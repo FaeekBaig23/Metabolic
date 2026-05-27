@@ -7,22 +7,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.faiqbaig.metabolic.core.data.remote.UsdaFood
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMealBottomSheet(
-    food: UsdaFood,
+    foodName: String,
+    baseCalories: Float,
+    baseProtein: Float,
+    baseCarbs: Float,
+    baseFat: Float,
     onDismiss: () -> Unit,
     onLogMeal: (foodName: String, calories: Int, protein: Int, carbs: Int, fat: Int, servingQty: Float, servingUnit: String, mealType: String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    // USDA nutrient IDs: 1008=Calories, 1003=Protein, 1005=Carbs, 1004=Fat
-    val baseCalories = food.foodNutrients.find { it.nutrientId == 1008 }?.value ?: 0f
-    val baseProtein = food.foodNutrients.find { it.nutrientId == 1003 }?.value ?: 0f
-    val baseCarbs = food.foodNutrients.find { it.nutrientId == 1005 }?.value ?: 0f
-    val baseFat = food.foodNutrients.find { it.nutrientId == 1004 }?.value ?: 0f
 
     var servingQtyStr by remember { mutableStateOf("1.0") }
     val servingQty = servingQtyStr.toFloatOrNull() ?: 0f
@@ -41,7 +38,7 @@ fun AddMealBottomSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 48.dp) // Extra padding for system nav bars
         ) {
-            Text(text = "Log ${food.description}", style = MaterialTheme.typography.titleLarge)
+            Text(text = "Log $foodName", style = MaterialTheme.typography.titleLarge)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -91,13 +88,13 @@ fun AddMealBottomSheet(
             Button(
                 onClick = {
                     onLogMeal(
-                        food.description,
+                        foodName,
                         (baseCalories * servingQty).toInt(),
                         (baseProtein * servingQty).toInt(),
                         (baseCarbs * servingQty).toInt(),
                         (baseFat * servingQty).toInt(),
                         servingQty,
-                        "serving",
+                        "serving", // Defaulting to serving, but you can add a dropdown for this later!
                         selectedMealType
                     )
                     onDismiss()

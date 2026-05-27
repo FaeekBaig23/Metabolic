@@ -2,6 +2,10 @@ package com.faiqbaig.metabolic.core.data.repository
 
 import android.graphics.Bitmap
 import com.faiqbaig.metabolic.BuildConfig
+import com.faiqbaig.metabolic.core.data.local.UserProfileEntity
+import com.faiqbaig.metabolic.core.data.remote.DietPlanDay
+import com.faiqbaig.metabolic.core.data.remote.DietPlanMeal
+import com.faiqbaig.metabolic.core.data.remote.DietPlanResponse
 import com.faiqbaig.metabolic.core.data.remote.GeminiFoodAnalysis
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
@@ -10,10 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import javax.inject.Inject
-import com.faiqbaig.metabolic.core.data.local.UserProfileEntity
-import com.faiqbaig.metabolic.core.data.remote.DietPlanResponse
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
 
@@ -109,12 +109,12 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
             val jsonObject = JSONObject(cleanJsonString)
 
             val analysis = GeminiFoodAnalysis(
-                foodName = jsonObject.getString("foodName"),
-                estimatedWeightG = jsonObject.getDouble("estimatedWeightG").coerceAtLeast(0.0),
-                calories = jsonObject.getInt("calories").coerceAtLeast(0),
-                protein = jsonObject.getDouble("protein").coerceAtLeast(0.0),
-                carbs = jsonObject.getDouble("carbs").coerceAtLeast(0.0),
-                fat = jsonObject.getDouble("fat").coerceAtLeast(0.0)
+                foodName = jsonObject.optString("foodName", "Unknown Food"),
+                estimatedWeightG = jsonObject.optDouble("estimatedWeightG", 0.0).coerceAtLeast(0.0),
+                calories = jsonObject.optInt("calories", 0).coerceAtLeast(0),
+                protein = jsonObject.optDouble("protein", 0.0).coerceAtLeast(0.0),
+                carbs = jsonObject.optDouble("carbs", 0.0).coerceAtLeast(0.0),
+                fat = jsonObject.optDouble("fat", 0.0).coerceAtLeast(0.0)
             )
             Result.success(analysis)
         } catch (e: Exception) {
@@ -194,18 +194,40 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
                 throw Exception("No valid JSON found in response.")
             }
 
-            // 3. Parse with Moshi
-            val moshi = Moshi.Builder()
-                .add(KotlinJsonAdapterFactory()) // This teaches Moshi how to read Kotlin data classes!
-                .build()
-            val adapter = moshi.adapter(DietPlanResponse::class.java)
-            val planResponse = adapter.fromJson(cleanJson)
-                ?: throw Exception("Moshi failed to parse the JSON.")
+            // 3. Parse with Android Native JSONObject
+            val jsonObject = JSONObject(cleanJson)
+            val daysArray = jsonObject.optJSONArray("days") ?: org.json.JSONArray()
 
-            Result.success(planResponse)
+            val parsedDays = mutableListOf<DietPlanDay>()
+
+            for (i in 0 until daysArray.length()) {
+                val dayObj = daysArray.getJSONObject(i)
+                val dayIndex = dayObj.optInt("dayIndex", i)
+
+                val mealsArray = dayObj.optJSONArray("meals") ?: org.json.JSONArray()
+                val parsedMeals = mutableListOf<DietPlanMeal>()
+
+                for (j in 0 until mealsArray.length()) {
+                    val mealObj = mealsArray.getJSONObject(j)
+                    parsedMeals.add(
+                        DietPlanMeal(
+                            mealType = mealObj.optString("mealType", "Snack"),
+                            foodName = mealObj.optString("foodName", "Unknown Meal"),
+                            estimatedWeightG = mealObj.optDouble("estimatedWeightG", 0.0),
+                            calories = mealObj.optInt("calories", 0),
+                            protein = mealObj.optDouble("protein", 0.0),
+                            carbs = mealObj.optDouble("carbs", 0.0),
+                            fat = mealObj.optDouble("fat", 0.0)
+                        )
+                    )
+                }
+
+                parsedDays.add(DietPlanDay(dayIndex = dayIndex, meals = parsedMeals))
+            }
+
+            Result.success(DietPlanResponse(days = parsedDays))
 
         } catch (e: Exception) {
-            // This will print a massive red error in Logcat that is easy to spot
             android.util.Log.e("METABOLIC_AI_CRASH", "FAILED TO GENERATE PLAN!", e)
             Result.failure(e)
         }
