@@ -2,7 +2,6 @@ package com.faiqbaig.metabolic.core.data.repository
 
 import com.faiqbaig.metabolic.core.data.local.MealLogDao
 import com.faiqbaig.metabolic.core.data.local.MealLogEntity
-import com.faiqbaig.metabolic.core.data.remote.UsdaApi
 import com.faiqbaig.metabolic.core.data.remote.UsdaFood
 import com.faiqbaig.metabolic.core.domain.repository.MealLogRepository
 import kotlinx.coroutines.flow.Flow

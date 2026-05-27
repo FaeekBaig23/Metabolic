@@ -28,14 +28,13 @@ android {
             }
         }
 
-        // ── NEW: Read local.properties and expose USDA API Key ──
+        // ── Read local.properties and expose Gemini API Key ──
         val properties = Properties()
         val localPropertiesFile = project.rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
         }
 
-        buildConfigField("String", "USDA_API_KEY", "\"${properties.getProperty("USDA_API_KEY", "")}\"")
         buildConfigField("String", "GEMINI_API_KEY", "\"${properties.getProperty("GEMINI_API_KEY", "")}\"")
     }
 
@@ -109,13 +108,6 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.moshi)
-    implementation(libs.okhttp.logging)
-    implementation(libs.moshi.kotlin)
-    kapt(libs.moshi.codegen)
-
     // CameraX
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
@@ -124,10 +116,6 @@ dependencies {
 
     // Google Gemini Generative AI SDK
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-
-    //Moshi
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
-    implementation("com.squareup.moshi:moshi-adapters:1.15.0")
 
     // Maps
     implementation(libs.maps.compose)
