@@ -149,7 +149,13 @@ private fun OnboardingPage(page: OnboardingPage) {
                 .background(MetabolicGreen.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = page.emoji, fontSize = 52.sp)
+            // ── CHANGED: Swapped Text out for Icon ──
+            Icon(
+                imageVector = page.icon,
+                contentDescription = page.title,
+                tint = MetabolicGreen,
+                modifier = Modifier.size(52.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(40.dp))
