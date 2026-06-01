@@ -15,4 +15,5 @@ interface DietPlanRepository {
     fun getActivePlan(userId: String): Flow<DietPlanWithMeals?>
     suspend fun regeneratePlan(userId: String, profile: UserProfileEntity): Result<Unit>
     suspend fun logMealFromPlan(meal: DietPlanMealEntity, date: String): Result<Unit>
+    suspend fun deleteActivePlan(userId: String)
 }

@@ -57,7 +57,6 @@ class PlansViewModel @Inject constructor(
                                 hasPlan = true,
                                 plan = dietPlanWithMeals,
                                 generatedOnLabel = "Generated on ${date.format(formatter)}",
-                                // Update meals for currently selected day
                                 selectedDayMeals = dietPlanWithMeals.mealsByDay[currentState.selectedDayIndex] ?: emptyList()
                             )
                         }
@@ -74,9 +73,7 @@ class PlansViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // CHANGED: Using getProfileOnce() from your repository
                 val profile = profileRepository.getProfileOnce()
-
                 if (profile != null) {
                     dietPlanRepository.generateAndSavePlan(userId, profile)
                         .onFailure { e ->
@@ -99,20 +96,11 @@ class PlansViewModel @Inject constructor(
 
     fun onRegenerateConfirmed() {
         val userId = currentUserId ?: return
-
-        _uiState.update {
-            it.copy(
-                isRegenerateDialogVisible = false,
-                isGenerating = true,
-                error = null
-            )
-        }
+        _uiState.update { it.copy(isRegenerateDialogVisible = false, isGenerating = true, error = null) }
 
         viewModelScope.launch {
             try {
-                // CHANGED: Using getProfileOnce() from your repository
                 val profile = profileRepository.getProfileOnce()
-
                 if (profile != null) {
                     dietPlanRepository.regeneratePlan(userId, profile)
                         .onFailure { e ->
@@ -131,6 +119,29 @@ class PlansViewModel @Inject constructor(
         _uiState.update { it.copy(isRegenerateDialogVisible = false) }
     }
 
+    // ─── NEW DELETE LOGIC ───
+    fun onDeleteClick() {
+        _uiState.update { it.copy(isDeleteDialogVisible = true) }
+    }
+
+    fun onDeleteConfirmed() {
+        val userId = currentUserId ?: return
+        _uiState.update { it.copy(isDeleteDialogVisible = false) }
+
+        viewModelScope.launch {
+            try {
+                // IMPORTANT: Ensure this function exists in your DietPlanRepository!
+                dietPlanRepository.deleteActivePlan(userId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message ?: "Failed to delete plan") }
+            }
+        }
+    }
+
+    fun onDeleteDismissed() {
+        _uiState.update { it.copy(isDeleteDialogVisible = false) }
+    }
+
     fun onDaySelected(dayIndex: Int) {
         _uiState.update { currentState ->
             val mealsForDay = currentState.plan?.mealsByDay?.get(dayIndex) ?: emptyList()
@@ -143,7 +154,7 @@ class PlansViewModel @Inject constructor(
 
     fun onLogMeal(meal: DietPlanMealEntity) {
         viewModelScope.launch {
-            val todayDateString = LocalDate.now().toString() // Format: "yyyy-MM-dd"
+            val todayDateString = LocalDate.now().toString()
             dietPlanRepository.logMealFromPlan(meal, todayDateString)
                 .onFailure { e ->
                     _uiState.update { it.copy(error = e.message ?: "Failed to log meal") }

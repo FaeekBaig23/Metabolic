@@ -14,5 +14,6 @@ data class PlansUiState(
     val selectedDayIndex: Int = LocalDate.now().dayOfWeek.value - 1,
     val selectedDayMeals: List<DietPlanMealEntity> = emptyList(),
     val generatedOnLabel: String = "",
-    val error: String? = null
+    val error: String? = null,
+    val isDeleteDialogVisible: Boolean = false
 )

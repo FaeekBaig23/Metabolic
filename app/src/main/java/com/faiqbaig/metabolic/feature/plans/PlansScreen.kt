@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 
-// Assume DarkBackground is defined in your theme
 val DarkBackground = Color(0xFF0A1612)
 
 @Composable
@@ -27,7 +28,6 @@ fun PlansScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Error handling (Toast)
     LaunchedEffect(uiState.error) {
         uiState.error?.let { errorMsg ->
             Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
@@ -41,24 +41,22 @@ fun PlansScreen(
             .background(DarkBackground)
             .statusBarsPadding()
     ) {
-        // THE FIX: Removed "&& !uiState.isGenerating" so the empty state stays visible to show its loading button!
         if (!uiState.hasPlan) {
             EmptyPlanState(
                 isGenerating = uiState.isGenerating,
                 onGenerateClick = viewModel::onGeneratePlan
             )
         } else {
-            // Changed to a simple 'else' since if they DO have a plan, we show the list
             Column(modifier = Modifier.fillMaxSize()) {
                 // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp),
+                        .padding(start = 16.dp, end = 8.dp, top = 24.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Your 7-Day Plan",
                             color = DarkTextPrimary,
@@ -72,19 +70,28 @@ fun PlansScreen(
                         )
                     }
 
-                    Text(
-                        text = "↻ Regenerate",
-                        color = MetabolicGreen,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clickable { viewModel.onRegenerateClick() }
-                            .padding(8.dp)
-                    )
+                    // ── NEW: Action Buttons Row ──
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "↻ Regenerate",
+                            color = MetabolicGreen,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clickable { viewModel.onRegenerateClick() }
+                                .padding(8.dp)
+                        )
+                        IconButton(onClick = viewModel::onDeleteClick) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Plan",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Day Selector
                 DaySelector(
                     selectedDayIndex = uiState.selectedDayIndex,
                     onDaySelected = viewModel::onDaySelected
@@ -92,10 +99,9 @@ fun PlansScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Meals List
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp) // Padding for bottom nav bar
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     items(uiState.selectedDayMeals) { meal ->
                         PlanMealCard(
@@ -115,6 +121,26 @@ fun PlansScreen(
             RegenerateDialog(
                 onConfirm = viewModel::onRegenerateConfirmed,
                 onDismiss = viewModel::onRegenerateDismissed
+            )
+        }
+
+        // ── NEW: Delete Confirmation Dialog ──
+        if (uiState.isDeleteDialogVisible) {
+            AlertDialog(
+                onDismissRequest = viewModel::onDeleteDismissed,
+                containerColor = DarkSurface,
+                title = { Text("Delete Diet Plan", color = DarkTextPrimary) },
+                text = { Text("Are you sure you want to delete your 7-day diet plan? You will need to generate a new one.", color = DarkTextSecondary) },
+                confirmButton = {
+                    TextButton(onClick = viewModel::onDeleteConfirmed) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = viewModel::onDeleteDismissed) {
+                        Text("Cancel", color = MetabolicGreen)
+                    }
+                }
             )
         }
 

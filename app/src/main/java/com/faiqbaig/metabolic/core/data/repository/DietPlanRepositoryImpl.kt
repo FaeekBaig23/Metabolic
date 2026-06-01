@@ -108,4 +108,8 @@ class DietPlanRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override suspend fun deleteActivePlan(userId: String) {
+        dietPlanDao.deleteAllPlansForUser(userId)
+    }
 }
