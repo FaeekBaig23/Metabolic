@@ -2,6 +2,7 @@ package com.faiqbaig.metabolic.feature.profile_view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 
-// ── ADDED MISSING THEME IMPORTS ──
 import com.faiqbaig.metabolic.core.ui.theme.DarkBackground
 import com.faiqbaig.metabolic.core.ui.theme.DarkSurface
 import com.faiqbaig.metabolic.core.ui.theme.DarkSurfaceVariant
@@ -32,14 +32,19 @@ fun EditProfileScreen(
     val profile by viewModel.profileState.collectAsState()
 
     if (profile == null) {
-        Box(modifier = Modifier.fillMaxSize().background(DarkBackground), contentAlignment = androidx.compose.ui.Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(DarkBackground), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = MetabolicGreen)
         }
         return
     }
 
-    // Unpack current profile safely
     val p = profile!!
+
+    // ── SYNCED OPTIONS FROM PROFILESTEPS.KT ──
+    val genderOptions = listOf("Male", "Female", "Other")
+    val goalOptions = listOf("Lose Weight", "Gain Weight", "Build Muscle", "Athletics", "Maintenance")
+    val activityOptions = listOf("Sedentary", "Lightly Active", "Moderately Active", "Very Active")
+    val dietOptions = listOf("No Preference", "Vegetarian", "Vegan", "Keto", "Paleo", "Mediterranean")
 
     Column(
         modifier = Modifier
@@ -61,9 +66,12 @@ fun EditProfileScreen(
             EditTextField("Age", p.age.toString(), isNumber = true, modifier = Modifier.weight(1f)) { v ->
                 viewModel.updateField { it.copy(age = v.toIntOrNull() ?: it.age) }
             }
-            EditTextField("Gender", p.gender, modifier = Modifier.weight(1f)) { v ->
-                viewModel.updateField { it.copy(gender = v) }
-            }
+            EditDropdownField(
+                label = "Gender",
+                selectedValue = p.gender,
+                options = genderOptions,
+                modifier = Modifier.weight(1f)
+            ) { v -> viewModel.updateField { it.copy(gender = v) } }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -78,11 +86,27 @@ fun EditProfileScreen(
 
         // ── Goals & Activity ──
         Text("Lifestyle & Diet", color = MetabolicGreen, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-        EditTextField("Primary Goal", p.goal) { v -> viewModel.updateField { it.copy(goal = v) } }
+
+        EditDropdownField(
+            label = "Primary Goal",
+            selectedValue = p.goal,
+            options = goalOptions
+        ) { v -> viewModel.updateField { it.copy(goal = v) } }
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            EditTextField("Activity Level", p.activityLevel, modifier = Modifier.weight(1f)) { v -> viewModel.updateField { it.copy(activityLevel = v) } }
-            EditTextField("Diet Type", p.dietType, modifier = Modifier.weight(1f)) { v -> viewModel.updateField { it.copy(dietType = v) } }
+            EditDropdownField(
+                label = "Activity Level",
+                selectedValue = p.activityLevel,
+                options = activityOptions,
+                modifier = Modifier.weight(1f)
+            ) { v -> viewModel.updateField { it.copy(activityLevel = v) } }
+
+            EditDropdownField(
+                label = "Diet Type",
+                selectedValue = p.dietType,
+                options = dietOptions,
+                modifier = Modifier.weight(1f)
+            ) { v -> viewModel.updateField { it.copy(dietType = v) } }
         }
 
         EditTextField("Activity Types (e.g., Gym, Running)", p.activityTypes) { v -> viewModel.updateField { it.copy(activityTypes = v) } }
@@ -159,4 +183,56 @@ fun EditTextField(
         ),
         shape = RoundedCornerShape(12.dp)
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditDropdownField(
+    label: String,
+    selectedValue: String,
+    options: List<String>,
+    modifier: Modifier = Modifier,
+    onValueChange: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier.padding(bottom = 12.dp)
+    ) {
+        OutlinedTextField(
+            value = selectedValue,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label, color = DarkTextSecondary) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MetabolicGreen,
+                unfocusedBorderColor = DarkSurfaceVariant,
+                focusedTextColor = DarkTextPrimary,
+                unfocusedTextColor = DarkTextPrimary,
+                cursorColor = MetabolicGreen
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.menuAnchor().fillMaxWidth()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(DarkSurfaceVariant)
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, color = DarkTextPrimary) },
+                    onClick = {
+                        onValueChange(option)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
+        }
+    }
 }
