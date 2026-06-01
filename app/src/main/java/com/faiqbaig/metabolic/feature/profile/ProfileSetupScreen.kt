@@ -56,7 +56,12 @@ fun ProfileSetupScreen(
                 .align(Alignment.TopCenter)
         )
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        // ── ADDED .imePadding() HERE ──
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding()
+        ) {
 
             // ── Top bar ──────────────────────────────────────────────────────
             ProfileTopBar(

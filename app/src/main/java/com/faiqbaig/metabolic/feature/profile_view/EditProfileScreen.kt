@@ -53,6 +53,7 @@ fun EditProfileScreen(
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
             .verticalScroll(rememberScrollState())
+            .imePadding() // <--- ADDED THIS LINE
     ) {
         Spacer(modifier = Modifier.height(24.dp))
         Text("Edit Profile Details", color = DarkTextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
