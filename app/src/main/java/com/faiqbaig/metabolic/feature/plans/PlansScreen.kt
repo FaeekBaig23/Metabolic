@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 val DarkBackground = Color(0xFF0A1612)
 
@@ -28,16 +29,64 @@ fun PlansScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var displayErrorMessage by remember { mutableStateOf("") }
+
+    // ── NEW: State controls for the 2-second 100% delay ──
+    var forceLoadingState by remember { mutableStateOf(false) }
+    var isRegeneratingFlag by remember { mutableStateOf(false) }
+    var isComplete by remember { mutableStateOf(false) }
+
+    val handleGenerate = {
+        forceLoadingState = true
+        isRegeneratingFlag = false
+        isComplete = false
+        viewModel.onGeneratePlan()
+    }
+
+    val handleRegenerate = {
+        forceLoadingState = true
+        isRegeneratingFlag = true
+        isComplete = false
+        viewModel.onRegenerateConfirmed()
+    }
+
     LaunchedEffect(uiState.error) {
-        uiState.error?.let { errorMsg ->
-            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+        uiState.error?.let { rawError ->
+            val isTrafficError = rawError.contains("503") ||
+                    rawError.contains("timeout", ignoreCase = true) ||
+                    rawError.contains("demand", ignoreCase = true)
+
+            displayErrorMessage = if (isTrafficError) {
+                "Metabolic is currently handling a high volume of requests. Please wait a few moments and try generating your plan again!"
+            } else {
+                "We encountered a hiccup while crafting your plan. Please check your connection and try again."
+            }
+
+            showErrorDialog = true
+            forceLoadingState = false // Immediately drop loading screen on error
+            isComplete = false
             viewModel.clearError()
         }
     }
 
+    // ── NEW: Intercept the end of generation to hold at 100% for 2 seconds ──
+    LaunchedEffect(uiState.isGenerating) {
+        if (!uiState.isGenerating && forceLoadingState) {
+            delay(100) // Brief pause to see if an error caused it to stop
+            if (!showErrorDialog) {
+                isComplete = true // Push the bar to 100%
+                delay(2000L) // Hold the screen for 2 seconds
+                viewModel.onDaySelected(0)
+                forceLoadingState = false // Now drop the loading screen
+                isComplete = false
+            }
+        }
+    }
+
     LaunchedEffect(uiState.hasPlan) {
-        if (uiState.hasPlan) {
-            // Force the ViewModel to look at Day 0, where all our newly generated meals are!
+        // Ensures Day 0 is selected if the user opens the app with a saved plan
+        if (uiState.hasPlan && !forceLoadingState) {
             viewModel.onDaySelected(0)
         }
     }
@@ -48,14 +97,19 @@ fun PlansScreen(
             .background(DarkBackground)
             .statusBarsPadding()
     ) {
-        if (!uiState.hasPlan) {
+
+        // Use our local force loading state to decide what to show
+        val showEmpty = (!uiState.hasPlan && !forceLoadingState) || (forceLoadingState && !isRegeneratingFlag)
+        val showOverlay = forceLoadingState && isRegeneratingFlag
+
+        if (showEmpty) {
             EmptyPlanState(
-                isGenerating = uiState.isGenerating,
-                onGenerateClick = viewModel::onGeneratePlan
+                isGenerating = forceLoadingState,
+                isComplete = isComplete,
+                onGenerateClick = handleGenerate
             )
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -96,8 +150,6 @@ fun PlansScreen(
                     }
                 }
 
-                // The DaySelector was removed here!
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 80.dp)
@@ -115,10 +167,9 @@ fun PlansScreen(
             }
         }
 
-        // Overlays & Dialogs
         if (uiState.isRegenerateDialogVisible) {
             RegenerateDialog(
-                onConfirm = viewModel::onRegenerateConfirmed,
+                onConfirm = handleRegenerate, // Pass the hijacked UI trigger
                 onDismiss = viewModel::onRegenerateDismissed
             )
         }
@@ -142,8 +193,22 @@ fun PlansScreen(
             )
         }
 
-        if (uiState.isGenerating && uiState.hasPlan) {
-            GeneratingOverlay()
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                containerColor = DarkSurface,
+                title = { Text("Taking a quick breather", color = DarkTextPrimary, fontWeight = FontWeight.Bold) },
+                text = { Text(displayErrorMessage, color = DarkTextSecondary) },
+                confirmButton = {
+                    TextButton(onClick = { showErrorDialog = false }) {
+                        Text("Got it", color = MetabolicGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
+        }
+
+        if (showOverlay) {
+            GeneratingOverlay(isComplete = isComplete)
         }
     }
 }
