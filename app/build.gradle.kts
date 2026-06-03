@@ -108,6 +108,9 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
+    // Google Auth
+    implementation("com.google.android.gms:play-services-auth:21.1.0")
+
     // CameraX
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
@@ -117,9 +120,8 @@ dependencies {
     // Google Gemini Generative AI SDK
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
-    // Maps
-    implementation(libs.maps.compose)
-    implementation(libs.maps.places)
+    // Material3 Icons
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Utilities
     implementation(libs.coil.compose)

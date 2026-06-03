@@ -3,9 +3,12 @@ package com.faiqbaig.metabolic.feature.profile
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,11 +31,11 @@ fun SectionLabel(label: String, modifier: Modifier = Modifier) {
 // ─── Step 2: Health Goal ──────────────────────────────────────────────────────
 
 private val goals = listOf(
-    Triple("Lose Weight",    "🔥", "Burn fat, maintain muscle"),
-    Triple("Gain Weight",    "📈", "Healthy caloric surplus"),
-    Triple("Build Muscle",   "💪", "Strength & hypertrophy"),
-    Triple("Athletics",      "⚡", "Optimize performance"),
-    Triple("Maintenance",    "⚖️",  "Stay at current weight")
+    Triple("Lose Weight",    Icons.Default.LocalFireDepartment, "Burn fat, maintain muscle"),
+    Triple("Gain Weight",    Icons.Default.TrendingUp, "Healthy caloric surplus"),
+    Triple("Build Muscle",   Icons.Default.FitnessCenter, "Strength & hypertrophy"),
+    Triple("Athletics",      Icons.Default.Bolt, "Optimize performance"),
+    Triple("Maintenance",    Icons.Default.MonitorWeight,  "Stay at current weight")
 )
 
 @Composable
@@ -57,35 +60,40 @@ fun HealthGoalStep(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 2 x 2 grid + one full-width card at bottom
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                goals.take(2).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                goals.take(2).forEach { (label, icon, subtitle) ->
                     SelectionCard(
                         label = label,
-                        emoji = emoji,
+                        icon = icon,
                         subtitle = subtitle,
                         isSelected = selectedGoal == label,
                         onClick = { onGoalSelected(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                goals.drop(2).take(2).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                goals.drop(2).take(2).forEach { (label, icon, subtitle) ->
                     SelectionCard(
                         label = label,
-                        emoji = emoji,
+                        icon = icon,
                         subtitle = subtitle,
                         isSelected = selectedGoal == label,
                         onClick = { onGoalSelected(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
-            goals.last().let { (label, emoji, subtitle) ->
+            goals.last().let { (label, icon, subtitle) ->
                 SelectionCard(
                     label = label,
-                    emoji = emoji,
+                    icon = icon,
                     subtitle = subtitle,
                     isSelected = selectedGoal == label,
                     onClick = { onGoalSelected(label) },
@@ -99,14 +107,19 @@ fun HealthGoalStep(
 // ─── Step 3: Activity ─────────────────────────────────────────────────────────
 
 private val activityLevels = listOf(
-    Triple("Sedentary",         "🛋️", "Little or no exercise"),
-    Triple("Lightly Active",    "🚶", "Light exercise 1–3 days/wk"),
-    Triple("Moderately Active", "🏃", "Moderate exercise 3–5 days/wk"),
-    Triple("Very Active",       "🔥", "Hard exercise 6–7 days/wk")
+    Triple("Sedentary",         Icons.Default.Weekend, "Little or no exercise"),
+    Triple("Lightly Active",    Icons.Default.DirectionsWalk, "Light exercise 1–3 days/wk"),
+    Triple("Moderately Active", Icons.Default.DirectionsRun, "Moderate exercise 3–5 days/wk"),
+    Triple("Very Active",       Icons.Default.LocalFireDepartment, "Hard exercise 6–7 days/wk")
 )
 
 private val activityTypesList = listOf(
-    "🏋️ Gym", "🧘 Yoga", "⚽ Sports", "🏃 Cardio", "🏠 Home Workouts", "🤸 Other"
+    Pair("Gym", Icons.Default.FitnessCenter),
+    Pair("Yoga", Icons.Default.SelfImprovement),
+    Pair("Sports", Icons.Default.SportsSoccer),
+    Pair("Cardio", Icons.Default.DirectionsRun),
+    Pair("Home Workouts", Icons.Default.Home),
+    Pair("Other", Icons.Default.MoreHoriz)
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -137,23 +150,29 @@ fun ActivityStep(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                activityLevels.take(2).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                activityLevels.take(2).forEach { (label, icon, subtitle) ->
                     SelectionCard(
-                        label = label, emoji = emoji, subtitle = subtitle,
+                        label = label, icon = icon, subtitle = subtitle,
                         isSelected = activityLevel == label,
                         onClick = { onLevelChange(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                activityLevels.drop(2).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                activityLevels.drop(2).forEach { (label, icon, subtitle) ->
                     SelectionCard(
-                        label = label, emoji = emoji, subtitle = subtitle,
+                        label = label, icon = icon, subtitle = subtitle,
                         isSelected = activityLevel == label,
                         onClick = { onLevelChange(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
@@ -169,13 +188,12 @@ fun ActivityStep(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            activityTypesList.forEach { type ->
-                // Strip emoji prefix for storage key
-                val key = type.substringAfter(" ")
+            activityTypesList.forEach { (label, icon) ->
                 SelectionChip(
-                    label = type,
-                    isSelected = key in activityTypes,
-                    onClick = { onTypeToggle(key) }
+                    label = label,
+                    icon = icon,
+                    isSelected = label in activityTypes,
+                    onClick = { onTypeToggle(label) }
                 )
             }
         }
@@ -187,16 +205,21 @@ fun ActivityStep(
 // ─── Step 4: Diet ─────────────────────────────────────────────────────────────
 
 private val dietTypes = listOf(
-    Triple("No Preference",    "🍽️", "Eat everything"),
-    Triple("Vegetarian",       "🥗", "No meat"),
-    Triple("Vegan",            "🌱", "No animal products"),
-    Triple("Keto",             "🥑", "High-fat, low-carb"),
-    Triple("Paleo",            "🥩", "Whole, unprocessed"),
-    Triple("Mediterranean",    "🫒", "Balanced & heart-healthy")
+    Triple("No Preference",    Icons.Default.Restaurant, "Eat everything"),
+    Triple("Vegetarian",       Icons.Default.Eco, "No meat"),
+    Triple("Vegan",            Icons.Default.Spa, "No animal products"),
+    Triple("Keto",             Icons.Default.Egg, "High-fat, low-carb"),
+    Triple("Paleo",            Icons.Default.SetMeal, "Whole, unprocessed"),
+    Triple("Mediterranean",    Icons.Default.LocalDining, "Balanced & heart-healthy")
 )
 
 private val allergyList = listOf(
-    "🌾 Gluten", "🥛 Dairy", "🥜 Nuts", "🥚 Eggs", "🫘 Soy", "🦐 Shellfish"
+    Pair("Gluten", Icons.Default.Grass),
+    Pair("Dairy", Icons.Default.LocalDrink),
+    Pair("Nuts", Icons.Default.Eco),
+    Pair("Eggs", Icons.Default.Egg),
+    Pair("Soy", Icons.Default.Spa),
+    Pair("Shellfish", Icons.Default.SetMeal)
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -227,33 +250,42 @@ fun DietStep(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                dietTypes.take(2).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                dietTypes.take(2).forEach { (label, icon, subtitle) ->
                     SelectionCard(
-                        label = label, emoji = emoji, subtitle = subtitle,
+                        label = label, icon = icon, subtitle = subtitle,
                         isSelected = dietType == label,
                         onClick = { onDietChange(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                dietTypes.drop(2).take(2).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                dietTypes.drop(2).take(2).forEach { (label, icon, subtitle) ->
                     SelectionCard(
-                        label = label, emoji = emoji, subtitle = subtitle,
+                        label = label, icon = icon, subtitle = subtitle,
                         isSelected = dietType == label,
                         onClick = { onDietChange(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                dietTypes.drop(4).forEach { (label, emoji, subtitle) ->
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                dietTypes.drop(4).forEach { (label, icon, subtitle) ->
                     SelectionCard(
-                        label = label, emoji = emoji, subtitle = subtitle,
+                        label = label, icon = icon, subtitle = subtitle,
                         isSelected = dietType == label,
                         onClick = { onDietChange(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }
@@ -269,12 +301,12 @@ fun DietStep(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            allergyList.forEach { item ->
-                val key = item.substringAfter(" ")
+            allergyList.forEach { (label, icon) ->
                 SelectionChip(
-                    label = item,
-                    isSelected = key in allergies,
-                    onClick = { onAllergyToggle(key) }
+                    label = label,
+                    icon = icon,
+                    isSelected = label in allergies,
+                    onClick = { onAllergyToggle(label) }
                 )
             }
         }

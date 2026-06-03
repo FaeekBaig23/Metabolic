@@ -3,9 +3,9 @@ package com.faiqbaig.metabolic.feature.plans
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,9 +41,17 @@ fun EmptyPlanState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("📅", fontSize = 64.sp, modifier = Modifier.padding(bottom = 16.dp))
+        Icon(
+            imageVector = Icons.Default.CalendarMonth,
+            contentDescription = "Calendar",
+            tint = MetabolicGreen,
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .size(64.dp)
+        )
+
         Text("No plan yet", color = DarkTextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-        Text("Generate a personalized 7-day meal plan based on your goals and preferences.", color = DarkTextSecondary, fontSize = 16.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 32.dp))
+        Text("Generate a personalized daily meal plan based on your goals and preferences.", color = DarkTextSecondary, fontSize = 16.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 32.dp))
 
         Button(
             onClick = onGenerateClick,
@@ -63,38 +71,7 @@ fun EmptyPlanState(
     }
 }
 
-@Composable
-fun DaySelector(
-    selectedDayIndex: Int,
-    onDaySelected: (Int) -> Unit
-) {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        itemsIndexed(days) { index, day ->
-            val isSelected = index == selectedDayIndex
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) MetabolicGreen else DarkSurfaceVariant)
-                    .clickable { onDaySelected(index) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    text = day,
-                    color = if (isSelected) DarkSurface else DarkTextSecondary,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = 15.sp
-                )
-            }
-        }
-    }
-}
+// The DaySelector component was entirely deleted from here.
 
 @Composable
 fun PlanMealCard(
@@ -132,7 +109,6 @@ fun PlanMealCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // THE FIX: Stripped down, simple, error-free button.
             Button(
                 onClick = onLogMeal,
                 modifier = Modifier.fillMaxWidth(),
@@ -162,7 +138,7 @@ fun RegenerateDialog(
         onDismissRequest = onDismiss,
         containerColor = DarkSurfaceVariant,
         title = { Text("Regenerate Plan?", color = DarkTextPrimary) },
-        text = { Text("This will permanently replace your current 7-day meal plan. Do you want to continue?", color = DarkTextSecondary) },
+        text = { Text("This will permanently replace your current daily meal plan. Do you want to continue?", color = DarkTextSecondary) },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text("Yes, Regenerate", color = MetabolicGreen, fontWeight = FontWeight.Bold) }
         },

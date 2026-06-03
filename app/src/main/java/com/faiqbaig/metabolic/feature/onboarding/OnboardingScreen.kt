@@ -24,7 +24,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.faiqbaig.metabolic.core.ui.theme.*
 import com.faiqbaig.metabolic.feature.auth.AuthViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.ExperimentalFoundationApi
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(
     onFinished : () -> Unit,

@@ -9,7 +9,6 @@ import com.faiqbaig.metabolic.core.data.remote.DietPlanResponse
 import com.faiqbaig.metabolic.core.data.remote.GeminiFoodAnalysis
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
-import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -20,7 +19,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
     // ── 1. The Meal Scanner Model ──
     private val mealAnalysisModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
-        apiKey = BuildConfig.GEMINI_API_KEY,
+        apiKey = BuildConfig.GEMINI_API_KEY.replace("\"", "").trim(),
         systemInstruction = content {
             text(
                 """
@@ -45,7 +44,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
     // ── 2. The Chatbot Model ──
     private val chatModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
-        apiKey = BuildConfig.GEMINI_API_KEY,
+        apiKey = BuildConfig.GEMINI_API_KEY.replace("\"", "").trim(),
         systemInstruction = content {
             text(
                 "You are a highly knowledgeable, encouraging, and friendly fitness and nutrition AI assistant for an app called Metabolic. " +
@@ -62,10 +61,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
     // ── 3. The Diet Plan Generator Model ──
     private val dietPlanModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
-        apiKey = BuildConfig.GEMINI_API_KEY,
-        generationConfig = generationConfig {
-            responseMimeType = "application/json" // Native SDK enforcement for pure JSON
-        }
+        apiKey = BuildConfig.GEMINI_API_KEY.replace("\"", "").trim()
     )
 
     override suspend fun analyzeMealFromImage(bitmap: Bitmap): Result<GeminiFoodAnalysis> = withContext(Dispatchers.IO) {
@@ -145,7 +141,7 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
     override suspend fun generateDietPlan(profile: UserProfileEntity): Result<DietPlanResponse> {
         return try {
             val prompt = """
-                You are a professional sports nutritionist. Generate a personalized 7-day meal plan for a user with the following profile:
+                You are a professional sports nutritionist. Generate a personalized 1-day meal plan for a user with the following profile:
                 - Goal: ${profile.goal}
                 - Activity Level: ${profile.activityLevel}
                 - Diet Type: ${profile.dietType}
@@ -154,10 +150,11 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
                 - Daily Targets: ${profile.dailyCalorieTarget} kcal, ${profile.dailyProteinTarget}g Protein, ${profile.dailyCarbsTarget}g Carbs, ${profile.dailyFatTarget}g Fat.
 
                 Requirements:
-                1. Provide exactly 7 days of meals (dayIndex 0 to 6, where 0 is Monday).
-                2. Each day must include realistic, culturally accessible meals categorized by mealType ("Breakfast", "Lunch", "Dinner", "Snack").
-                3. Vary the meals across the 7 days (do not repeat the same meal on consecutive days).
-                4. The total daily macros for each day should closely align with the user's Daily Targets.
+                1. Provide exactly 1 day of meals (dayIndex 0).
+                2. FOCUS ON EVERYDAY INDIAN CUISINE: Meals MUST be realistic, standard Indian household dishes (e.g., everyday sabzis, dals, rotis, rice dishes, typical Indian breakfast items).
+                3. Do NOT include fancy, exotic, or expensive imported ingredients. Only use ingredients easily available in local Indian markets and grocery stores (specifically around the Mumbai/Thane area).
+                4. The day must include realistic meals categorized by mealType ("Breakfast", "Lunch", "Dinner", "Snack").
+                5. The total daily macros should closely align with the user's Daily Targets.
                 
                 Output JSON strictly matching this schema:
                 {
@@ -167,12 +164,12 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
                       "meals": [
                         {
                           "mealType": "Breakfast",
-                          "foodName": "Oatmeal with Banana",
-                          "estimatedWeightG": 300.0,
+                          "foodName": "Poha with Peanuts",
+                          "estimatedWeightG": 250.0,
                           "calories": 350,
-                          "protein": 12.0,
-                          "carbs": 60.0,
-                          "fat": 6.0
+                          "protein": 8.0,
+                          "carbs": 55.0,
+                          "fat": 12.0
                         }
                       ]
                     }
@@ -180,22 +177,24 @@ class GeminiRepositoryImpl @Inject constructor() : GeminiRepository {
                 }
             """.trimIndent()
 
-            // 1. Call the dedicated Diet Plan model
             val response = dietPlanModel.generateContent(prompt)
             val rawText = response.text ?: throw Exception("Empty response from Gemini")
 
-            // 2. Extract JSON strictly
-            val startIndex = rawText.indexOf('{')
-            val endIndex = rawText.lastIndexOf('}')
+            val backticks = "`".repeat(3)
+            val cleanString = rawText.replace(backticks + "json", "")
+                .replace(backticks, "")
+                .trim()
 
-            val cleanJson = if (startIndex != -1 && endIndex != -1 && startIndex <= endIndex) {
-                rawText.substring(startIndex, endIndex + 1)
+            val startIndex = cleanString.indexOf('{')
+            val endIndex = cleanString.lastIndexOf('}')
+
+            val finalJson = if (startIndex != -1 && endIndex != -1 && startIndex <= endIndex) {
+                cleanString.substring(startIndex, endIndex + 1)
             } else {
                 throw Exception("No valid JSON found in response.")
             }
 
-            // 3. Parse with Android Native JSONObject
-            val jsonObject = JSONObject(cleanJson)
+            val jsonObject = JSONObject(finalJson)
             val daysArray = jsonObject.optJSONArray("days") ?: org.json.JSONArray()
 
             val parsedDays = mutableListOf<DietPlanDay>()

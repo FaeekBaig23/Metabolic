@@ -1,5 +1,8 @@
 package com.faiqbaig.metabolic.feature.auth
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -33,6 +37,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.faiqbaig.metabolic.core.ui.theme.*
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 @Composable
 fun LoginScreen(
@@ -44,8 +51,30 @@ fun LoginScreen(
     var email     by remember { mutableStateOf("") }
     var password  by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     val isLoading = authState is AuthState.Loading
+
+    // ── Google Sign-In Setup ──────────────────────────────────────────────
+    val webClientId = "67987164449-n0snsf2b4l9amn2bq5q3hrmocn56n79g.apps.googleusercontent.com" // <--- PASTE YOUR ID HERE
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val idToken = account?.idToken
+                if (idToken != null) {
+                    viewModel.signInWithGoogle(idToken)
+                }
+            } catch (e: ApiException) {
+                // User likely closed the popup, or network error occurred
+            }
+        }
+    }
 
     // Navigate on success
     LaunchedEffect(authState) {
@@ -69,7 +98,7 @@ fun LoginScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .imePadding(), // <--- ADDED THIS LINE
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(80.dp))
@@ -230,7 +259,19 @@ fun LoginScreen(
 
             // ── Google Sign-In button ─────────────────────────────
             OutlinedButton(
-                onClick  = { /* wired in next step */ },
+                onClick  = {
+                    // 1. Build the request using your Web Client ID
+                    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(webClientId)
+                        .requestEmail()
+                        .build()
+
+                    // 2. Get the Google Sign-In client
+                    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+
+                    // 3. Launch the popup!
+                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                },
                 enabled  = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()

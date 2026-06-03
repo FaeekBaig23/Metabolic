@@ -35,6 +35,13 @@ fun PlansScreen(
         }
     }
 
+    LaunchedEffect(uiState.hasPlan) {
+        if (uiState.hasPlan) {
+            // Force the ViewModel to look at Day 0, where all our newly generated meals are!
+            viewModel.onDaySelected(0)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -52,13 +59,13 @@ fun PlansScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 8.dp, top = 24.dp, bottom = 8.dp),
+                        .padding(start = 16.dp, end = 8.dp, top = 24.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Your 7-Day Plan",
+                            text = "Your Daily Plan",
                             color = DarkTextPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
@@ -70,7 +77,6 @@ fun PlansScreen(
                         )
                     }
 
-                    // ── NEW: Action Buttons Row ──
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "↻ Regenerate",
@@ -90,14 +96,7 @@ fun PlansScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                DaySelector(
-                    selectedDayIndex = uiState.selectedDayIndex,
-                    onDaySelected = viewModel::onDaySelected
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                // The DaySelector was removed here!
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -124,13 +123,12 @@ fun PlansScreen(
             )
         }
 
-        // ── NEW: Delete Confirmation Dialog ──
         if (uiState.isDeleteDialogVisible) {
             AlertDialog(
                 onDismissRequest = viewModel::onDeleteDismissed,
                 containerColor = DarkSurface,
                 title = { Text("Delete Diet Plan", color = DarkTextPrimary) },
-                text = { Text("Are you sure you want to delete your 7-day diet plan? You will need to generate a new one.", color = DarkTextSecondary) },
+                text = { Text("Are you sure you want to delete your daily meal plan?", color = DarkTextSecondary) },
                 confirmButton = {
                     TextButton(onClick = viewModel::onDeleteConfirmed) {
                         Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)

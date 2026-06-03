@@ -4,17 +4,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Female
+import androidx.compose.material.icons.filled.Male
+import androidx.compose.material.icons.filled.Transgender
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.faiqbaig.metabolic.core.ui.theme.*
 
 private val genders = listOf(
-    Triple("Male",   "♂",  null),
-    Triple("Female", "♀",  null),
-    Triple("Other",  "⚧",  null)
+    Triple("Male",   Icons.Default.Male,  null),
+    Triple("Female", Icons.Default.Female,  null),
+    Triple("Other",  Icons.Default.Transgender,  null)
 )
 
 @Composable
@@ -61,10 +66,10 @@ fun BasicInfoStep(
             modifier = Modifier.padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            genders.forEach { (label, emoji, _) ->
+            genders.forEach { (label, icon, _) ->
                 SelectionCard(
                     label = label,
-                    emoji = emoji,
+                    icon = icon, // <--- Swapped 'emoji' for 'icon'
                     isSelected = gender == label,
                     onClick = { onGenderChange(label) },
                     modifier = Modifier.weight(1f)

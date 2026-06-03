@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -209,7 +210,7 @@ fun ProfileBottomBar(
 @Composable
 fun SelectionCard(
     label: String,
-    emoji: String,
+    icon: ImageVector, // <--- CHANGED FROM EMOJI
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -231,7 +232,12 @@ fun SelectionCard(
             .padding(16.dp)
     ) {
         Column {
-            Text(text = emoji, fontSize = 24.sp)
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) MetabolicGreen else DarkTextSecondary,
+                modifier = Modifier.size(28.dp)
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = label,
@@ -270,6 +276,7 @@ fun SelectionCard(
 @Composable
 fun SelectionChip(
     label: String,
+    icon: ImageVector, // <--- NEW PARAMETER ADDED
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -288,12 +295,21 @@ fun SelectionChip(
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        Text(
-            text = label,
-            color = if (isSelected) MetabolicGreen else DarkTextSecondary,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            fontSize = 13.sp
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) MetabolicGreen else DarkTextSecondary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = label,
+                color = if (isSelected) MetabolicGreen else DarkTextSecondary,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 13.sp
+            )
+        }
     }
 }
 
