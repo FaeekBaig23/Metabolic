@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.pow
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
@@ -33,30 +34,80 @@ class EditProfileViewModel @Inject constructor(
         _profileState.value = _profileState.value?.let { update(it) }
     }
 
+    // ── NEW: BMR & Target Recalculation Logic ──
+    private fun calculateUpdatedTargets(profile: UserProfileEntity): UserProfileEntity {
+        // 1. Calculate BMR (Mifflin-St Jeor Equation)
+        val isMale = profile.gender.equals("Male", ignoreCase = true)
+        var bmr = (10 * profile.weightKg) + (6.25 * profile.heightCm) - (5 * profile.age)
+        bmr += if (isMale) 5 else -161
+
+        // 2. Apply Activity Multiplier
+        val activityMultiplier = when (profile.activityLevel.lowercase()) {
+            "sedentary" -> 1.2
+            "lightly active" -> 1.375
+            "moderately active" -> 1.55
+            "very active" -> 1.725
+            "super active" -> 1.9
+            else -> 1.2
+        }
+        val tdee = bmr * activityMultiplier
+
+        // 3. Adjust for Goal
+        val dailyCalorieTarget = when (profile.goal.lowercase()) {
+            "lose weight" -> (tdee - 500).toInt()
+            "gain weight" -> (tdee + 500).toInt()
+            else -> tdee.toInt() // Maintain weight
+        }
+
+        // 4. Calculate Macros (Standard Split: 30% Protein, 40% Carbs, 30% Fat)
+        val dailyProteinTarget = ((dailyCalorieTarget * 0.30) / 4).toInt()
+        val dailyCarbsTarget = ((dailyCalorieTarget * 0.40) / 4).toInt()
+        val dailyFatTarget = ((dailyCalorieTarget * 0.30) / 9).toInt()
+
+        // 5. Recalculate BMI
+        val heightMeters = profile.heightCm / 100.0
+        val calculatedBmi = if (heightMeters > 0) {
+            (profile.weightKg / heightMeters.pow(2)).toFloat()
+        } else {
+            profile.bmi
+        }
+
+        return profile.copy(
+            dailyCalorieTarget = dailyCalorieTarget,
+            dailyProteinTarget = dailyProteinTarget,
+            dailyCarbsTarget = dailyCarbsTarget,
+            dailyFatTarget = dailyFatTarget,
+            bmi = calculatedBmi
+        )
+    }
+
     fun saveProfile(onSuccess: () -> Unit) {
         val current = _profileState.value ?: return
+
+        // ── NEW: Intercept and recalculate targets before saving ──
+        val updatedProfile = calculateUpdatedTargets(current)
+
         viewModelScope.launch {
-            // Unpack the entity and pass it to your repository exactly as it expects
             repository.saveProfile(
-                userId = current.userId,
-                name = current.name,
-                gender = current.gender,
-                age = current.age,
-                weightKg = current.weightKg,
-                heightCm = current.heightCm,
-                goal = current.goal,
-                activityLevel = current.activityLevel,
-                activityTypes = current.activityTypes,
-                dietType = current.dietType,
-                allergies = current.allergies,
-                medicalConditions = current.medicalConditions,
-                risks = current.risks,
-                background = current.background,
-                dailyCalorieTarget = current.dailyCalorieTarget,
-                dailyProteinTarget = current.dailyProteinTarget,
-                dailyCarbsTarget = current.dailyCarbsTarget,
-                dailyFatTarget = current.dailyFatTarget,
-                bmi = current.bmi
+                userId = updatedProfile.userId,
+                name = updatedProfile.name,
+                gender = updatedProfile.gender,
+                age = updatedProfile.age,
+                weightKg = updatedProfile.weightKg,
+                heightCm = updatedProfile.heightCm,
+                goal = updatedProfile.goal,
+                activityLevel = updatedProfile.activityLevel,
+                activityTypes = updatedProfile.activityTypes,
+                dietType = updatedProfile.dietType,
+                allergies = updatedProfile.allergies,
+                medicalConditions = updatedProfile.medicalConditions,
+                risks = updatedProfile.risks,
+                background = updatedProfile.background,
+                dailyCalorieTarget = updatedProfile.dailyCalorieTarget,
+                dailyProteinTarget = updatedProfile.dailyProteinTarget,
+                dailyCarbsTarget = updatedProfile.dailyCarbsTarget,
+                dailyFatTarget = updatedProfile.dailyFatTarget,
+                bmi = updatedProfile.bmi
             )
             onSuccess()
         }
