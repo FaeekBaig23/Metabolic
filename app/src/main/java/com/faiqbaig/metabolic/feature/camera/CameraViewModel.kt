@@ -81,4 +81,14 @@ class CameraViewModel @Inject constructor(
             )
         }
     }
+
+    fun clearError() {
+        // Depending on how your state is set up, it will look like one of these:
+
+        // If you are using a MutableStateFlow with .update {}:
+        _uiState.value = _uiState.value.copy(error = null)
+
+        // OR if your state uses update():
+        // _uiState.update { it.copy(error = null) }
+    }
 }

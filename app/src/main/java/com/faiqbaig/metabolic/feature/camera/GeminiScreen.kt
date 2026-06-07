@@ -1,10 +1,12 @@
 package com.faiqbaig.metabolic.feature.camera
 
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,14 +26,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.faiqbaig.metabolic.core.data.remote.GeminiFoodAnalysis
+
+// ── App Theme Colors ──
+val MetabolicGreen = Color(0xFF00C896)
+val DarkSurface = Color(0xFF121F1B)
+val DarkTextPrimary = Color(0xFFE8F5F0)
+val DarkTextSecondary = Color(0xFF8FBFB0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +52,38 @@ fun GeminiScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // ── ERROR DIALOG STATE ──
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var displayErrorMessage by remember { mutableStateOf("") }
+
+    // ── CAMERA PERMISSION STATE ──
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    // ── TRAFFIC & ERROR INTERCEPTOR ──
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { rawError ->
+            val isTrafficError = rawError.contains("503") ||
+                    rawError.contains("timeout", ignoreCase = true) ||
+                    rawError.contains("demand", ignoreCase = true)
+
+            displayErrorMessage = if (isTrafficError) {
+                "Metabolic is currently handling a high volume of requests. Please wait a few moments and try again!"
+            } else {
+                "We encountered a hiccup. Please check your connection and try again."
+            }
+
+            showErrorDialog = true
+            viewModel.clearError()
+        }
+    }
 
     // ── 1. Modern Photo Picker (Gallery) ──
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -64,6 +106,18 @@ fun GeminiScreen(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
         bitmap?.let { viewModel.onImageSelected(it) }
+    }
+
+    // ── 3. Camera Permission Launcher ──
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        hasCameraPermission = isGranted
+        if (isGranted) {
+            cameraLauncher.launch(null)
+        } else {
+            Toast.makeText(context, "Camera permission is required to scan meals.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Scaffold(
@@ -94,6 +148,7 @@ fun GeminiScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
+                // Note: Retained your inline error card just in case there are non-dialog errors you want to show
                 uiState.error?.let { errorMsg ->
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -109,7 +164,7 @@ fun GeminiScreen(
                     }
                 }
 
-                // ── MOVED UP: Text Input Area ──
+                // ── Text Input Area ──
                 OutlinedTextField(
                     value = uiState.textInput,
                     onValueChange = viewModel::onTextInputChange,
@@ -124,7 +179,7 @@ fun GeminiScreen(
                 Text("OR", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // ── MOVED DOWN: Image Preview Area ──
+                // ── Image Preview Area ──
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -165,13 +220,20 @@ fun GeminiScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // ── MOVED DOWN: Action Buttons ──
+                // ── Action Buttons ──
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Button(
-                        onClick = { cameraLauncher.launch(null) },
+                        onClick = {
+                            // ── SAFE CAMERA LAUNCH ──
+                            if (hasCameraPermission) {
+                                cameraLauncher.launch(null)
+                            } else {
+                                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            }
+                        },
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.CameraAlt, contentDescription = "Camera")
@@ -230,6 +292,21 @@ fun GeminiScreen(
                     Spacer(modifier = Modifier.height(80.dp))
                 }
             }
+        }
+
+        // ── CUSTOM ERROR DIALOG ──
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                containerColor = DarkSurface,
+                title = { Text("Taking a quick breather", color = DarkTextPrimary, fontWeight = FontWeight.Bold) },
+                text = { Text(displayErrorMessage, color = DarkTextSecondary) },
+                confirmButton = {
+                    TextButton(onClick = { showErrorDialog = false }) {
+                        Text("Got it", color = MetabolicGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
         }
     }
 }
