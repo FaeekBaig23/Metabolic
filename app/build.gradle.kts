@@ -18,7 +18,7 @@ android {
         applicationId   = "com.faiqbaig.metabolic"
         minSdk          = 26
         targetSdk       = 35
-        versionCode     = 3
+        versionCode     = 4
         versionName     = "1.6.7"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -122,6 +122,9 @@ dependencies {
 
     // Material3 Icons
     implementation("androidx.compose.material:material-icons-extended")
+
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Utilities
     implementation(libs.coil.compose)

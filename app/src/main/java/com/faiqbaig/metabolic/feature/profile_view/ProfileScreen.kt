@@ -1,6 +1,9 @@
 package com.faiqbaig.metabolic.feature.profile_view
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -14,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 
 val DarkBackground = Color(0xFF0A1612)
@@ -26,6 +30,32 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // ── 1. Check current notification permission status ──
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true // Android 12 and below don't require this runtime permission
+            }
+        )
+    }
+
+    // ── 2. The Native Permission Launcher ──
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        hasNotificationPermission = isGranted
+        if (isGranted) {
+            Toast.makeText(context, "Notifications enabled! Please flip the switch again to activate.", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Please enable notifications in your phone's settings.", Toast.LENGTH_LONG).show()
+        }
+    }
 
     // Launcher for the Android Photo Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -92,14 +122,30 @@ fun ProfileScreen(
                     title = "Meal Reminders",
                     subtitle = "Get notified when it's time to eat",
                     isChecked = uiState.mealRemindersEnabled,
-                    onToggle = viewModel::toggleMealReminders
+                    onToggle = { isTurningOn ->
+                        if (isTurningOn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                            // INTERCEPT: Ask for permission instead of flipping the switch
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            // PROCEED: Permission granted or turning off
+                            viewModel.toggleMealReminders(isTurningOn)
+                        }
+                    }
                 )
 
                 SettingToggleRow(
                     title = "Hydration Reminders",
                     subtitle = "Periodic nudges to drink water",
                     isChecked = uiState.hydrationRemindersEnabled,
-                    onToggle = viewModel::toggleHydrationReminders
+                    onToggle = { isTurningOn ->
+                        if (isTurningOn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                            // INTERCEPT: Ask for permission instead of flipping the switch
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            // PROCEED: Permission granted or turning off
+                            viewModel.toggleHydrationReminders(isTurningOn)
+                        }
+                    }
                 )
             }
 

@@ -1,12 +1,16 @@
 package com.faiqbaig.metabolic.feature.profile_view
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.faiqbaig.metabolic.core.data.repository.UserProfileRepository
-import com.faiqbaig.metabolic.core.data.repository.WeightLogRepository // ── ADDED IMPORT ──
+import com.faiqbaig.metabolic.core.data.repository.WeightLogRepository
 import com.faiqbaig.metabolic.core.utils.PreferencesManager
+import com.faiqbaig.metabolic.core.utils.MetabolicNotificationManager // ── ADDED IMPORT ──
+import com.faiqbaig.metabolic.core.utils.ReminderManager
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext // ── ADDED IMPORT ──
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,11 +23,15 @@ class ProfileViewModel @Inject constructor(
     private val profileRepository: UserProfileRepository,
     private val preferencesManager: PreferencesManager,
     private val auth: FirebaseAuth,
-    private val weightLogRepository: WeightLogRepository // ── INJECTED REPOSITORY ──
+    private val weightLogRepository: WeightLogRepository,
+    @ApplicationContext private val context: Context // ── INJECTED CONTEXT ──
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+    // Initialize our new Notification Manager
+    private val notificationManager = MetabolicNotificationManager(context)
 
     init {
         observeProfileData()
@@ -32,14 +40,12 @@ class ProfileViewModel @Inject constructor(
         observeLatestWeight()
     }
 
-    // ── Section A: Observe User Profile (Room) ──
     private fun observeProfileData() {
         viewModelScope.launch {
             profileRepository.getProfile().collect { profile ->
                 _uiState.update {
                     it.copy(
                         userProfile = profile,
-                        // Fallback to profile weight/BMI until a new log overrides it
                         latestWeightKg = it.latestWeightKg ?: profile?.weightKg,
                         latestBmi = it.latestBmi ?: profile?.bmi,
                         isLoading = false
@@ -49,7 +55,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    // ── Section B: Observe App Settings (DataStore) ──
     private fun observeSettingsData() {
         viewModelScope.launch { preferencesManager.dailyWaterTarget.collect { target -> _uiState.update { it.copy(dailyWaterTargetMl = target) } } }
         viewModelScope.launch { preferencesManager.weightUnit.collect { unit -> _uiState.update { it.copy(weightUnit = unit) } } }
@@ -59,7 +64,6 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.weightReminders.collect { enabled -> _uiState.update { it.copy(weightRemindersEnabled = enabled) } } }
     }
 
-    // ── Section C: Profile Image ──
     private fun observeProfileImage() {
         viewModelScope.launch {
             preferencesManager.profileImageUri.collect { uri ->
@@ -72,15 +76,38 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.setProfileImageUri(uri) }
     }
 
-    // ── Update Settings Actions ──
     fun updateWaterTarget(ml: Int) = viewModelScope.launch { preferencesManager.setDailyWaterTarget(ml) }
     fun updateWeightUnit(unit: String) = viewModelScope.launch { preferencesManager.setWeightUnit(unit) }
     fun updateHeightUnit(unit: String) = viewModelScope.launch { preferencesManager.setHeightUnit(unit) }
-    fun toggleMealReminders(enabled: Boolean) = viewModelScope.launch { preferencesManager.setMealReminders(enabled) }
-    fun toggleHydrationReminders(enabled: Boolean) = viewModelScope.launch { preferencesManager.setHydrationReminders(enabled) }
-    fun toggleWeightReminders(enabled: Boolean) = viewModelScope.launch { preferencesManager.setWeightReminders(enabled) }
 
-    // ── Account Management Actions ──
+    // ── UPDATED: Toggle Actions now trigger instant test notifications ──
+    fun toggleMealReminders(enabled: Boolean) = viewModelScope.launch {
+        preferencesManager.setMealReminders(enabled)
+        if (enabled) {
+            // Schedule for 6:00 PM (18:00)
+            ReminderManager.scheduleReminder(context, "MEAL", 18, 0)
+        } else {
+            // Cancel if the user turns the switch off
+            ReminderManager.cancelReminder(context, "MEAL")
+        }
+    }
+
+    fun toggleHydrationReminders(enabled: Boolean) = viewModelScope.launch {
+        preferencesManager.setHydrationReminders(enabled)
+        if (enabled) {
+            // Schedule for 12:00 PM (12:00)
+            ReminderManager.scheduleReminder(context, "HYDRATION", 12, 0)
+        } else {
+            // Cancel if the user turns the switch off
+            ReminderManager.cancelReminder(context, "HYDRATION")
+        }
+    }
+
+    fun toggleWeightReminders(enabled: Boolean) = viewModelScope.launch {
+        preferencesManager.setWeightReminders(enabled)
+        // Optional: Add a test notification for weight here too if you want!
+    }
+
     fun sendPasswordResetEmail() {
         val email = auth.currentUser?.email ?: return
         auth.sendPasswordResetEmail(email)
@@ -119,9 +146,7 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
-    // ── Observe Latest Weight from Repository ──
     private fun observeLatestWeight() {
-        // Grab the active user ID from Firebase, fallback if needed
         val userId = auth.currentUser?.uid ?: "CURRENT_USER_ID"
 
         viewModelScope.launch {
@@ -129,7 +154,6 @@ class ProfileViewModel @Inject constructor(
                 if (latestLog != null) {
                     _uiState.update { currentState ->
                         currentState.copy(
-                            // Cast the Room Entity Doubles to Floats for the Compose UI State
                             latestWeightKg = latestLog.weightKg.toFloat(),
                             latestBmi = latestLog.bmi.toFloat()
                         )
