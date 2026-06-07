@@ -59,10 +59,47 @@ class EditProfileViewModel @Inject constructor(
             else -> tdee.toInt() // Maintain weight
         }
 
-        // 4. Calculate Macros (Standard Split: 30% Protein, 40% Carbs, 30% Fat)
-        val dailyProteinTarget = ((dailyCalorieTarget * 0.30) / 4).toInt()
-        val dailyCarbsTarget = ((dailyCalorieTarget * 0.40) / 4).toInt()
-        val dailyFatTarget = ((dailyCalorieTarget * 0.30) / 9).toInt()
+        // 4. DYNAMIC MACRO CALCULATION BASED ON DIET TYPE
+        var dailyProteinTarget = 0
+        var dailyCarbsTarget = 0
+        var dailyFatTarget = 0
+
+        when (profile.dietType.lowercase()) {
+            "keto", "ketogenic" -> {
+                // Keto: 70% Fat, 25% Protein, 5% Carbs
+                dailyFatTarget = ((dailyCalorieTarget * 0.70) / 9).toInt()
+                dailyProteinTarget = ((dailyCalorieTarget * 0.25) / 4).toInt()
+                dailyCarbsTarget = ((dailyCalorieTarget * 0.05) / 4).toInt()
+            }
+            "low carb" -> {
+                // Low Carb: 40% Protein, 40% Fat, 20% Carbs
+                dailyProteinTarget = ((dailyCalorieTarget * 0.40) / 4).toInt()
+                dailyFatTarget = ((dailyCalorieTarget * 0.40) / 9).toInt()
+                dailyCarbsTarget = ((dailyCalorieTarget * 0.20) / 4).toInt()
+            }
+            "high protein" -> {
+                // High Protein: 40% Protein, 30% Fat, 30% Carbs
+                dailyProteinTarget = ((dailyCalorieTarget * 0.40) / 4).toInt()
+                dailyFatTarget = ((dailyCalorieTarget * 0.30) / 9).toInt()
+                dailyCarbsTarget = ((dailyCalorieTarget * 0.30) / 4).toInt()
+            }
+            else -> {
+                // Standard / Balanced / Vegetarian / Vegan
+                // Baseline: 2g of protein per kg of body weight (Gold standard fitness baseline)
+                dailyProteinTarget = (profile.weightKg * 2.0).toInt()
+                val proteinCalories = dailyProteinTarget * 4
+
+                // Fat: 25% of total calories
+                dailyFatTarget = ((dailyCalorieTarget * 0.25) / 9).toInt()
+                val fatCalories = dailyFatTarget * 9
+
+                // Carbs: The remaining calories
+                val remainingCalories = dailyCalorieTarget - proteinCalories - fatCalories
+
+                // .coerceAtLeast(0) prevents the app from crashing if a massive deficit creates negative carbs
+                dailyCarbsTarget = (remainingCalories / 4).coerceAtLeast(0).toInt()
+            }
+        }
 
         // 5. Recalculate BMI
         val heightMeters = profile.heightCm / 100.0
