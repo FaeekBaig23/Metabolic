@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,15 +27,36 @@ import kotlinx.coroutines.launch
 fun ChatbotScreen(
     viewModel: ChatbotViewModel = hiltViewModel()
 ) {
+    val errorText by viewModel.errorFlow.collectAsState(initial = null)
     val messages by viewModel.messages.collectAsState()
     val inputText by viewModel.inputText.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    // ── NEW: State to control the Help Dialog visibility ──
     var showHelpDialog by remember { mutableStateOf(false) }
 
-    // Auto-scroll to bottom when new messages arrive
+    // ── TRAFFIC & ERROR INTERCEPTOR STATE ──
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var displayErrorMessage by remember { mutableStateOf("") }
+
+    // ── TRAFFIC & ERROR INTERCEPTOR LOGIC ──
+    LaunchedEffect(errorText) {
+        errorText?.let { rawError ->
+            val isTrafficError = rawError.contains("503") ||
+                    rawError.contains("timeout", ignoreCase = true) ||
+                    rawError.contains("demand", ignoreCase = true)
+
+            displayErrorMessage = if (isTrafficError) {
+                "Metabolic is currently handling a high volume of requests. Please wait a few moments and try again!"
+            } else {
+                "We encountered a hiccup. Please check your connection and try again."
+            }
+
+            showErrorDialog = true
+            viewModel.clearError()
+        }
+    }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -43,13 +67,12 @@ fun ChatbotScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Metabolic AI") },
-                // ── NEW: Added the Help Icon Action ──
                 actions = {
                     IconButton(onClick = { showHelpDialog = true }) {
                         Icon(
                             imageVector = Icons.Outlined.HelpOutline,
                             contentDescription = "Help & Information",
-                            tint = MaterialTheme.colorScheme.primary // Forces Metabolic Green
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -63,7 +86,6 @@ fun ChatbotScreen(
                 .padding(paddingValues)
                 .imePadding()
         ) {
-            // ── Chat History ──
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -79,7 +101,6 @@ fun ChatbotScreen(
                 }
             }
 
-            // ── Input Area ──
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.fillMaxWidth()
@@ -88,7 +109,7 @@ fun ChatbotScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .padding(bottom = 80.dp), // Clear bottom navigation bar
+                        .padding(bottom = 80.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
@@ -129,9 +150,22 @@ fun ChatbotScreen(
                 }
             }
         }
+
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                title = { Text("Taking a quick breather", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
+                text = { Text(displayErrorMessage, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                confirmButton = {
+                    TextButton(onClick = { showErrorDialog = false }) {
+                        Text("Got it", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
+        }
     }
 
-    // ── NEW: The Help Dialog ──
     if (showHelpDialog) {
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
@@ -140,36 +174,55 @@ fun ChatbotScreen(
             },
             text = {
                 Column {
-                    Text("Powered by advanced AI, I am here to act as your personal fitness and nutrition assistant.")
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("✨ What I can help with:", fontWeight = FontWeight.Bold)
-                    Text("• Suggesting workout routines & exercises")
-                    Text("• Providing recipe ideas & macro estimates")
-                    Text("• Explaining fitness concepts & muscle targeting")
-                    Text("• General health and wellness tips")
+
+                    // ── REPLACED: AutoAwesome Icon ──
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("What Metabolic can help with:", fontWeight = FontWeight.Bold)
+                    }
+                    Text("• Suggesting workout routines & exercises", modifier = Modifier.padding(start = 28.dp))
+                    Text("• Providing recipe ideas & macro estimates", modifier = Modifier.padding(start = 28.dp))
+                    Text("• Explaining fitness concepts & muscle targeting", modifier = Modifier.padding(start = 28.dp))
+                    Text("• General health and wellness tips", modifier = Modifier.padding(start = 28.dp))
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("🚫 Limitations:", fontWeight = FontWeight.Bold)
-                    Text("• I cannot provide professional medical advice.")
-                    Text("• I do not have access to real-time internet data.")
+
+                    // ── REPLACED: Block Icon ──
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Block, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Limitations:", fontWeight = FontWeight.Bold)
+                    }
+                    Text("• Metabolic cannot provide professional medical advice.", modifier = Modifier.padding(start = 28.dp))
+                    Text("• Metabolic does not have access to real-time internet data.", modifier = Modifier.padding(start = 28.dp))
 
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Disclaimers
-                    Text(
-                        text = "⚠️ Disclaimer: Your chat history is temporary. If you navigate to another screen or close the app, this conversation will be cleared.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    // ── REPLACED: Warning Icons ──
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp).padding(top = 2.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Disclaimer: Your chat history is temporary. If you navigate to another screen or close the app, this conversation will be cleared.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "⚠️ Note: AI models can occasionally make mistakes. Please verify important information.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp).padding(top = 2.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Note: AI models can occasionally make mistakes. Please verify important information.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -213,6 +266,23 @@ fun ChatBubble(message: ChatMessage) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Thinking...", color = textColor, fontSize = 14.sp)
+                }
+            } else if (message.text == "Message failed to send.") {
+                // ── NEW: Injected Warning Icon for errors ──
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Error",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = message.text,
+                        color = textColor,
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp
+                    )
                 }
             } else {
                 Text(

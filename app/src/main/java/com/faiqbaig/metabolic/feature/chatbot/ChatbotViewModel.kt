@@ -26,6 +26,10 @@ class ChatbotViewModel @Inject constructor(
     private val mealLogRepository: MealLogRepository
 ) : ViewModel() {
 
+    // ── NEW: Error Flow for UI Dialog Interception ──
+    private val _errorFlow = MutableStateFlow<String?>(null)
+    val errorFlow: StateFlow<String?> = _errorFlow.asStateFlow()
+
     private val _messages = MutableStateFlow<List<ChatMessage>>(
         listOf(
             ChatMessage(
@@ -41,6 +45,11 @@ class ChatbotViewModel @Inject constructor(
 
     fun onInputTextChanged(text: String) {
         _inputText.value = text
+    }
+
+    // ── NEW: Clear Error Function for UI ──
+    fun clearError() {
+        _errorFlow.value = null
     }
 
     fun sendMessage() {
@@ -89,12 +98,10 @@ class ChatbotViewModel @Inject constructor(
                 }
 
                 // Grab today's meals from the Flow
-                // (Note: Adjust the date format string if your DB saves dates differently!)
                 val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
                 val todaysMeals = mealLogRepository.getTodaysMeals(userId, todayStr).firstOrNull()
 
                 todaysMeals?.forEach { meal ->
-                    // Using toInt() just in case your Entity uses Doubles for macros
                     totalCalsEaten += meal.calories.toInt()
                     totalProteinEaten += meal.protein.toInt()
                     totalCarbsEaten += meal.carbs.toInt()
@@ -140,7 +147,11 @@ class ChatbotViewModel @Inject constructor(
                     if (msg.id == loadingMsgId) {
                         result.fold(
                             onSuccess = { text -> msg.copy(text = text, isLoading = false) },
-                            onFailure = { err -> msg.copy(text = "Error: ${err.localizedMessage}", isLoading = false) }
+                            onFailure = { err ->
+                                // ── NEW: Trigger the UI Dialog and show a clean fallback bubble ──
+                                _errorFlow.value = err.localizedMessage ?: "Unknown error"
+                                msg.copy(text = "Message failed to send.", isLoading = false)
+                            }
                         )
                     } else {
                         msg
